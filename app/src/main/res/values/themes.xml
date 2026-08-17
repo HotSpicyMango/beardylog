@@ -1,0 +1,22 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Beardylog" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="colorPrimary">@color/forest</item>
+        <item name="colorSecondary">@color/forest</item>
+        <item name="colorSecondaryContainer">@color/forest_light</item>
+        <item name="colorOnSecondaryContainer">@color/forest</item>
+        <item name="colorSurface">@color/surface_card</item>
+        <item name="colorSurfaceVariant">@color/forest_light</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:colorBackground">@color/surface_alt</item>
+        <item name="android:windowBackground">@color/surface_alt</item>
+        <item name="android:statusBarColor">@color/surface_alt</item>
+        <item name="android:navigationBarColor">@color/surface_alt</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <style name="Theme.Beardylog" parent="Base.Theme.Beardylog" />
+</resources>

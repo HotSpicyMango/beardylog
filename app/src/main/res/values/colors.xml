@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="forest">#2F739F</color>
+    <color name="forest_light">#DCEFF8</color>
+    <color name="surface_alt">#F4F9FC</color>
+    <color name="surface_card">#FFFFFFFF</color>
+    <color name="text_primary">#15232B</color>
+    <color name="text_secondary">#5E707A</color>
+</resources>

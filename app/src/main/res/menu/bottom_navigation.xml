@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_home" android:icon="@android:drawable/ic_menu_view" android:title="홈" />
+    <item android:id="@+id/nav_reptiles" android:icon="@android:drawable/ic_menu_myplaces" android:title="개체" />
+    <item android:id="@+id/nav_calendar" android:icon="@android:drawable/ic_menu_month" android:title="달력" />
+    <item android:id="@+id/nav_breeding" android:icon="@android:drawable/ic_menu_agenda" android:title="브리딩" />
+    <item android:id="@+id/nav_settings" android:icon="@drawable/ic_settings" android:title="설정" />
+</menu>

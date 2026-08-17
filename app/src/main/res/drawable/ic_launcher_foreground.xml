@@ -1,0 +1,46 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 꼬리 -->
+    <path
+        android:fillColor="#55A4D0"
+        android:pathData="M54,85c-10,0 -20,-5 -25,-15c-3,-6 -2,-12 2,-15c4,-3 9,-1 11,4c2,5 7,10 12,10s10,-4 10,-10s-5,-12 -15,-12h-5"
+        android:strokeWidth="8"
+        android:strokeColor="#55A4D0"
+        android:strokeLineCap="round"/>
+
+    <!-- 몸통 -->
+    <path
+        android:fillColor="#A3D5EF"
+        android:pathData="M54,45c-15,0 -25,12 -25,28s10,22 25,22s25,-10 25,-22S69,45 54,45z" />
+
+    <!-- 머리 -->
+    <path
+        android:fillColor="#A3D5EF"
+        android:pathData="M54,20c-15,0 -18,12 -18,20s3,18 18,18s18,-10 18,-18S69,20 54,20z" />
+
+    <!-- 흰자위 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,38a6,6 0 1,1 12,0a6,6 0 1,1 -12,0zM60,38a6,6 0 1,1 12,0a6,6 0 1,1 -12,0z" />
+
+    <!-- 눈동자 -->
+    <path
+        android:fillColor="#15232B"
+        android:pathData="M46,38a3,3 0 1,1 6,0a3,3 0 1,1 -6,0zM64,38a3,3 0 1,1 6,0a3,3 0 1,1 -6,0z" />
+
+    <!-- 볼터치 -->
+    <path
+        android:fillColor="#FFCDD2"
+        android:pathData="M38,48a4,2.5 0 1,0 8,0a4,2.5 0 1,0 -8,0zM62,48a4,2.5 0 1,0 8,0a4,2.5 0 1,0 -8,0z" />
+
+    <!-- 입 -->
+    <path
+        android:strokeColor="#15232B"
+        android:strokeWidth="1.5"
+        android:pathData="M50,52q4,3 8,0"
+        android:strokeLineCap="round"/>
+</vector>
