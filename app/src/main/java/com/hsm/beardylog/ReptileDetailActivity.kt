@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -32,6 +34,10 @@ class ReptileDetailActivity : AppCompatActivity() {
         applySystemBarInsets(binding.root)
         currentId = intent.getLongExtra(EXTRA_ID, -1L)
         viewModel = ViewModelProvider(this, ReptileViewModelFactory(ReptileRepository(AppDatabase.getInstance(applicationContext).reptileDao())))[ReptileViewModel::class.java]
+        binding.toolbar.setNavigationIcon(R.drawable.ic_back)
+        binding.toolbar.navigationIcon?.let { icon ->
+            DrawableCompat.setTint(icon, ContextCompat.getColor(this, R.color.text_primary))
+        }
         binding.toolbar.setNavigationOnClickListener { finish() }
         binding.editButton.setOnClickListener { startActivity(Intent(this, ReptileEditActivity::class.java).putExtra(ReptileEditActivity.EXTRA_ID, currentId)) }
         binding.deleteButton.setOnClickListener { confirmDelete() }

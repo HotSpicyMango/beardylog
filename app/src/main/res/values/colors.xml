@@ -8,4 +8,5 @@
     <color name="surface_card">#FFFFFFFF</color>
     <color name="text_primary">#15232B</color>
     <color name="text_secondary">#5E707A</color>
+    <color name="danger">#BA1A1A</color>
 </resources>

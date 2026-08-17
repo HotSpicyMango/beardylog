@@ -62,6 +62,9 @@ class MainActivity : AppCompatActivity() {
         seedDemoWeekIfNeeded(database, weekStart)
 
         binding.currentDate.text = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+        binding.selectedProfileCard.setOnClickListener {
+            selectedReptileId?.let(::openDetail)
+        }
         binding.profileSortSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (profileSortMode != position) {
@@ -242,6 +245,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openEditor(id: Long?) = startActivity(Intent(this, ReptileEditActivity::class.java).apply { id?.let { putExtra(ReptileEditActivity.EXTRA_ID, it) } })
+    private fun openDetail(id: Long) = startActivity(Intent(this, ReptileDetailActivity::class.java).putExtra(ReptileDetailActivity.EXTRA_ID, id))
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun applySystemBarInsets(root: View) {
