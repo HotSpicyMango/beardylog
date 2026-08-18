@@ -20,7 +20,8 @@ class ReptileAdapter(private val onClick: (Reptile) -> Unit) : ListAdapter<Repti
         fun bind(item: Reptile) {
             binding.name.text = item.name
             binding.species.text = listOf(item.species, item.morph).filter { it.isNotBlank() }.joinToString(" · ")
-            val age = Period.between(LocalDate.ofEpochDay(item.referenceDate), LocalDate.now())
+            val ageDate = item.hatchingDate ?: item.adoptionDate ?: item.referenceDate
+            val age = Period.between(LocalDate.ofEpochDay(ageDate), LocalDate.now())
             binding.age.text = "${age.years}년 ${age.months}개월"
             binding.root.setOnClickListener { onClick(item) }
         }

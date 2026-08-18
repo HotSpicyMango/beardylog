@@ -13,6 +13,10 @@ class ReptileViewModel(private val repository: ReptileRepository) : ViewModel() 
     fun insert(reptile: Reptile) = viewModelScope.launch { repository.insert(reptile) }
     fun update(reptile: Reptile) = viewModelScope.launch { repository.update(reptile) }
     fun delete(reptile: Reptile) = viewModelScope.launch { repository.delete(reptile) }
+    fun deleteById(id: Long) = viewModelScope.launch { repository.deleteById(id) }
+    suspend fun insertAndWait(reptile: Reptile) = repository.insert(reptile)
+    suspend fun updateAndWait(reptile: Reptile) = repository.update(reptile)
+    suspend fun deleteByIdAndWait(id: Long) = repository.deleteById(id)
 }
 
 class ReptileViewModelFactory(private val repository: ReptileRepository) : ViewModelProvider.Factory {

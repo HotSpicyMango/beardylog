@@ -1,15 +1,16 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Beardylog" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="colorPrimary">@color/forest</item>
-        <item name="colorSecondary">@color/forest</item>
+        <item name="fontFamily">@font/pretendard</item>
+        <item name="android:fontFamily">@font/pretendard</item>
+        <item name="colorPrimary">@color/button_primary</item>
+        <item name="colorSecondary">@color/button_primary</item>
         <item name="colorSecondaryContainer">@color/forest_light</item>
         <item name="colorOnSecondaryContainer">@color/forest</item>
         <item name="colorSurface">@color/surface_card</item>
         <item name="colorSurfaceVariant">@color/forest_light</item>
         <item name="colorOnSurface">@color/text_primary</item>
-        <item name="colorOnPrimary">@color/text_primary</item>
+        <item name="colorOnPrimary">@color/button_on_primary</item>
         <item name="android:colorBackground">@color/surface_alt</item>
         <item name="android:windowBackground">@color/surface_alt</item>
         <item name="android:statusBarColor">@color/surface_alt</item>

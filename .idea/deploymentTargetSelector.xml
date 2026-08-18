@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="beardylog">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-08-17T13:17:17.543319Z">
+        <DropdownSelection timestamp="2026-08-18T19:55:51.500944Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/ohmingyu/.android/avd/s25.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CN60543ER" />
             </handle>
           </Target>
         </DropdownSelection>

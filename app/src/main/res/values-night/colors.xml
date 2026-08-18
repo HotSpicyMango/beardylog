@@ -3,6 +3,8 @@
     <color name="black">#FFFFFFFF</color>
     <color name="white">#FF0D171C</color>
     <color name="forest">#FF8BC9E8</color>
+    <color name="button_primary">#FF2F739F</color>
+    <color name="button_on_primary">#FFFFFFFF</color>
     <color name="forest_light">#FF20485A</color>
     <color name="surface_alt">#FF0D171C</color>
     <color name="surface_card">#FF16242B</color>

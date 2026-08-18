@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">BeardyLog</string>
+    <string-array name="care_types"><item>충식</item><item>채식</item><item>사료</item><item>금식</item></string-array>
+    <string-array name="week_days"><item>월요일</item><item>화요일</item><item>수요일</item><item>목요일</item><item>금요일</item><item>토요일</item><item>일요일</item></string-array>
 </resources>

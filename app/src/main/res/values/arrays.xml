@@ -2,4 +2,5 @@
 <resources>
     <string-array name="date_types"><item>해칭일</item><item>입양일</item></string-array>
     <string-array name="profile_sort_types"><item>이름순</item><item>해칭일순</item><item>입양일순</item></string-array>
+    <string-array name="gender_types"><item>미구분</item><item>수컷</item><item>암컷</item></string-array>
 </resources>

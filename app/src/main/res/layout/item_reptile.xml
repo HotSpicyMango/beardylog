@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="14dp" app:cardElevation="0dp" app:strokeColor="@color/forest_light" app:strokeWidth="1dp">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:minHeight="88dp" android:orientation="horizontal" android:padding="16dp">
-        <ImageView android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/bg_photo_placeholder" android:contentDescription="도마뱀 사진" android:padding="6dp" android:src="@drawable/ic_lizard_placeholder" />
+        <ImageView android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/bg_profile_circle" android:clipToOutline="true" android:contentDescription="도마뱀 사진" android:scaleType="centerCrop" android:src="@drawable/ic_lizard_placeholder" />
         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:layout_weight="1" android:orientation="vertical">
             <TextView android:id="@+id/name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/text_primary" android:textSize="17sp" android:textStyle="bold" />
             <TextView android:id="@+id/species" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="@color/text_secondary" android:textSize="13sp" />

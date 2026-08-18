@@ -17,4 +17,5 @@ public interface ReptileDao {
     @Insert long insert(Reptile reptile);
     @Update void update(Reptile reptile);
     @Delete void delete(Reptile reptile);
+    @Query("DELETE FROM reptiles WHERE id = :id") int deleteById(long id);
 }
