@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.ViewModelProvider
@@ -49,7 +48,11 @@ class ReptileEditActivity : AppBaseActivity() {
         if (result.resultCode == RESULT_OK) {
             result.data?.getStringExtra(CropActivity.EXTRA_RESULT_URI)?.let { value ->
                 photoUri = Uri.parse(value)
-                binding.photoPreview.setImageURI(photoUri)
+                com.bumptech.glide.Glide.with(this)
+                    .load(photoUri)
+                    .override(dp(112), dp(112))
+                    .centerCrop()
+                    .into(binding.photoPreview)
                 binding.photoPreview.alpha = 1f
             }
         }
@@ -61,8 +64,11 @@ class ReptileEditActivity : AppBaseActivity() {
         setContentView(binding.root)
         viewModel = ViewModelProvider(this, ReptileViewModelFactory(ReptileRepository(AppDatabase.getInstance(applicationContext).reptileDao())))[ReptileViewModel::class.java]
         binding.toolbar.setNavigationIcon(R.drawable.ic_back)
-        binding.toolbar.navigationIcon?.let { DrawableCompat.setTint(it, ContextCompat.getColor(this, R.color.text_primary)) }
-        binding.toolbar.setNavigationOnClickListener { requestClose() }
+        binding.toolbar.navigationIcon?.let { DrawableCompat.setTint(it, appColor(R.color.text_primary)) }
+        binding.toolbar.setNavigationOnClickListener { view ->
+            view.clickHaptic()
+            requestClose()
+        }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 requestClose()
@@ -70,10 +76,22 @@ class ReptileEditActivity : AppBaseActivity() {
         })
         binding.genderInput.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, genderOptions))
         binding.genderInput.setText("미구분", false)
-        binding.photoPreview.setOnClickListener { pickPhoto.launch("image/*") }
-        binding.hatchingDateButton.setOnClickListener { showDatePicker(true) }
-        binding.adoptionDateButton.setOnClickListener { showDatePicker(false) }
-        binding.saveButton.setOnClickListener { save() }
+        binding.photoPreview.setOnClickListener { view ->
+            view.clickHaptic()
+            pickPhoto.launch("image/*")
+        }
+        binding.hatchingDateButton.setOnClickListener { view ->
+            view.clickHaptic()
+            showDatePicker(true)
+        }
+        binding.adoptionDateButton.setOnClickListener { view ->
+            view.clickHaptic()
+            showDatePicker(false)
+        }
+        binding.saveButton.setOnClickListener { view ->
+            view.clickHaptic()
+            save()
+        }
         intent.getLongExtra(EXTRA_ID, -1L).takeIf { it > 0 }?.let { id ->
             viewModel.observeById(id).observe(this) { reptile -> reptile?.let(::populate) }
         } ?: run {
@@ -99,7 +117,10 @@ class ReptileEditActivity : AppBaseActivity() {
             hatchingDate = LocalDate.ofEpochDay(reptile.referenceDate)
         }
         photoUri = reptile.photoUri?.let(Uri::parse)
-        photoUri?.let { binding.photoPreview.setImageURI(it); binding.photoPreview.alpha = 1f }
+        photoUri?.let {
+            com.bumptech.glide.Glide.with(this).load(it).override(dp(112), dp(112)).centerCrop().into(binding.photoPreview)
+            binding.photoPreview.alpha = 1f
+        }
         updateDateLabels()
         initialFormState = currentFormState()
     }
@@ -150,9 +171,17 @@ class ReptileEditActivity : AppBaseActivity() {
 
     private fun save() {
         val name = binding.nameInput.text.toString().trim()
-        if (name.isBlank()) { binding.nameInput.error = "이름을 입력해 주세요"; return }
+        if (name.isBlank()) {
+            binding.saveButton.rejectHaptic()
+            binding.nameInput.error = "이름을 입력해 주세요"
+            return
+        }
         val primaryDate = hatchingDate ?: adoptionDate
-        if (primaryDate == null) { showBriefToast("해칭일 또는 입양일을 하나 이상 입력해 주세요"); return }
+        if (primaryDate == null) {
+            binding.saveButton.rejectHaptic()
+            showBriefToast("해칭일 또는 입양일을 하나 이상 입력해 주세요")
+            return
+        }
         val primaryType = if (hatchingDate != null) "해칭일" else "입양일"
         val gender = binding.genderInput.text.toString().takeIf { it in genderOptions } ?: "미구분"
         val reptile = Reptile(editing?.id ?: 0, name, binding.speciesInput.text.toString().trim(), binding.morphInput.text.toString().trim(), gender, primaryDate.toEpochDay(), primaryType, photoUri?.toString(), editing?.createdAt ?: System.currentTimeMillis()).apply {
@@ -169,14 +198,18 @@ class ReptileEditActivity : AppBaseActivity() {
                 }
             }.onSuccess {
                 initialFormState = currentFormState()
+                binding.saveButton.confirmHaptic()
                 showBriefToast("저장했습니다")
                 finish()
             }.onFailure {
                 binding.saveButton.isEnabled = true
+                binding.saveButton.rejectHaptic()
                 showBriefToast("저장하지 못했습니다")
             }
         }
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     companion object { const val EXTRA_ID = "reptile_id" }
 }

@@ -16,12 +16,22 @@ android {
     namespace = "com.hsm.beardylog"
     compileSdk = 37
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(localProperties.getProperty("RELEASE_STORE_FILE"))
+            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.hsm.beardylog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
-        versionName = "Beta - 4"
+        versionCode = 11
+        versionName = "0.1.0"
+//      8/26
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KOREA_HOLIDAY_API_KEY", "\"${localProperties.getProperty("KOREA_HOLIDAY_API_KEY", "")}\"")
@@ -29,8 +39,9 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
@@ -55,12 +66,14 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.viewpager2)
     annotationProcessor(libs.androidx.room.compiler)
     implementation(libs.material)
+    implementation("com.google.android.gms:play-services-auth:21.6.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     implementation(platform("com.google.firebase:firebase-bom:34.17.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-appdistribution:16.0.0-beta20")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }

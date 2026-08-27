@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/beardyBackground" android:orientation="vertical">
+    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="?attr/beardyBackground" android:title="추억 앨범" android:titleTextColor="?attr/beardyTextPrimary" android:navigationIcon="@drawable/ic_back" app:navigationIconTint="?attr/beardyTextPrimary" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/addPhotoButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="사진 추가" app:icon="@drawable/ic_input_add" />
+            <TextView android:id="@+id/emptyText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="40dp" android:gravity="center" android:text="아직 추가된 사진이 없습니다" android:textColor="?attr/beardyTextSecondary" android:textSize="14sp" android:visibility="gone" />
+            <android.widget.GridLayout android:id="@+id/photoGrid" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:columnCount="3" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

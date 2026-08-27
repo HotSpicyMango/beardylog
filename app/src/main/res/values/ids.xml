@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="calendar_previous_month_button" type="id" />
+    <item name="calendar_month_title" type="id" />
+    <item name="calendar_next_month_button" type="id" />
+</resources>

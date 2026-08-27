@@ -2,6 +2,8 @@
 <resources>
     <color name="black">#FFFFFFFF</color>
     <color name="white">#FF0D171C</color>
+
+    <!-- Static fallbacks for non-themed contexts and previews. -->
     <color name="forest">#FF8BC9E8</color>
     <color name="button_primary">#FF2F739F</color>
     <color name="button_on_primary">#FFFFFFFF</color>
@@ -10,5 +12,46 @@
     <color name="surface_card">#FF16242B</color>
     <color name="text_primary">#FFE6F2F7</color>
     <color name="text_secondary">#FFAABBC4</color>
-    <color name="danger">#FFFFB4AB</color>
+    <color name="danger">#FFFF6B6B</color>
+
+    <color name="palette_text_primary">#FFE6F2F7</color>
+    <color name="palette_text_secondary">#FFAABBC4</color>
+    <color name="palette_on_button">#FFFFFFFF</color>
+    <color name="palette_danger">#FFFF6B6B</color>
+
+    <color name="palette_ocean_accent">#FF8BC9E8</color>
+    <color name="palette_ocean_container">#FF20485A</color>
+    <color name="palette_ocean_background">#FF0D171C</color>
+    <color name="palette_ocean_surface">#FF16242B</color>
+    <color name="palette_ocean_button">#FF2F739F</color>
+
+    <color name="palette_forest_accent">#FF8DD3A5</color>
+    <color name="palette_forest_container">#FF234B31</color>
+    <color name="palette_forest_background">#FF101811</color>
+    <color name="palette_forest_surface">#FF18231B</color>
+    <color name="palette_forest_button">#FF356A48</color>
+
+    <color name="palette_lavender_accent">#FFCBB0EC</color>
+    <color name="palette_lavender_container">#FF493665</color>
+    <color name="palette_lavender_background">#FF17131D</color>
+    <color name="palette_lavender_surface">#FF211A29</color>
+    <color name="palette_lavender_button">#FF6C4D91</color>
+
+    <color name="palette_rose_accent">#FFF2AEC4</color>
+    <color name="palette_rose_container">#FF663044</color>
+    <color name="palette_rose_background">#FF1D1317</color>
+    <color name="palette_rose_surface">#FF291A20</color>
+    <color name="palette_rose_button">#FF94445F</color>
+
+    <color name="palette_coral_accent">#FFF3AD91</color>
+    <color name="palette_coral_container">#FF663725</color>
+    <color name="palette_coral_background">#FF1D1511</color>
+    <color name="palette_coral_surface">#FF291D18</color>
+    <color name="palette_coral_button">#FF9A472B</color>
+
+    <color name="palette_slate_accent">#FFBBC7D2</color>
+    <color name="palette_slate_container">#FF34404A</color>
+    <color name="palette_slate_background">#FF11171B</color>
+    <color name="palette_slate_surface">#FF1A2228</color>
+    <color name="palette_slate_button">#FF526272</color>
 </resources>

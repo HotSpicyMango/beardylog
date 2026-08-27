@@ -4,14 +4,17 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
-import java.util.Locale
+import com.hsm.beardylog.appColor
 
 class WeightAxisLabelsView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+    private val numberTypeface = resources.getFont(com.hsm.beardylog.R.font.d2)
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = context.getColor(com.hsm.beardylog.R.color.text_secondary)
-        textSize = 11f * resources.displayMetrics.scaledDensity
+        color = context.appColor(com.hsm.beardylog.R.color.text_secondary)
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 11f, resources.displayMetrics)
         textAlign = Paint.Align.RIGHT
+        typeface = numberTypeface
     }
     private var values: List<Float> = emptyList()
 
@@ -22,15 +25,16 @@ class WeightAxisLabelsView @JvmOverloads constructor(context: Context, attrs: At
         if (values.isEmpty()) return
         val top = paddingTop.toFloat()
         val bottom = height - paddingBottom.toFloat() - 20f * resources.displayMetrics.density
-        val min = values.minOrNull() ?: 0f
-        val max = values.maxOrNull() ?: 1f
-        val range = (max - min).coerceAtLeast(1f)
-        repeat(4) { index ->
-            val value = max - range * index / 3f
-            val y = top + 4f * resources.displayMetrics.density + (bottom - top) * index / 3f
-            canvas.drawText(formatWeight(value), width - 4f * resources.displayMetrics.density, y, labelPaint)
+        val scale = WeightChartScaleCalculator.from(values)
+        scale.ticks.forEach { value ->
+            val y = scale.yFor(value, top, bottom)
+            val baseline = y - (labelPaint.ascent() + labelPaint.descent()) / 2f
+            canvas.drawText(
+                WeightChartScaleCalculator.formatTick(value, scale.tickStep),
+                width - 4f * resources.displayMetrics.density,
+                baseline,
+                labelPaint
+            )
         }
     }
-
-    private fun formatWeight(value: Float): String = if (value % 1f == 0f) "${value.toInt()}g" else "%.1fg".format(Locale.US, value)
 }

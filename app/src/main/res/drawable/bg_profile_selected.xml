@@ -1,5 +1,5 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="@color/forest_light" />
+    <solid android:color="?attr/beardyAccentContainer" />
     <corners android:radius="14dp" />
-    <stroke android:width="2dp" android:color="@color/forest" />
+    <stroke android:width="2dp" android:color="?attr/beardyAccent" />
 </shape>

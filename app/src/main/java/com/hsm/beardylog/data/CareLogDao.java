@@ -8,6 +8,9 @@ import java.util.List;
 
 @Dao
 public interface CareLogDao {
+    @Query("SELECT * FROM care_logs ORDER BY id")
+    List<CareLog> all();
+
     @Query("SELECT * FROM care_logs ORDER BY completedDate DESC, id DESC")
     LiveData<List<CareLog>> observeAll();
     @Query("SELECT l.* FROM care_logs l INNER JOIN care_schedules s ON s.id = l.scheduleId WHERE s.reptileId = :reptileId ORDER BY l.completedDate DESC")
@@ -17,4 +20,8 @@ public interface CareLogDao {
     void deleteForDate(long scheduleId, long date);
 
     @Insert long insert(CareLog log);
+    @Insert void insertAll(List<CareLog> logs);
+
+    @Query("DELETE FROM care_logs")
+    void deleteAll();
 }

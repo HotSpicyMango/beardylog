@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 뒤로가기로 다시 보여지는 이전 화면: 살짝 왼쪽에서 자리 잡으며 서서히 선명해진다.
+     translate/alpha만 사용해서 GPU 합성만으로 처리되는 가벼운 애니메이션. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:anim/decelerate_interpolator">
+    <translate
+        android:fromXDelta="-8%p"
+        android:toXDelta="0"
+        android:duration="220" />
+    <alpha
+        android:fromAlpha="0.6"
+        android:toAlpha="1.0"
+        android:duration="220" />
+</set>

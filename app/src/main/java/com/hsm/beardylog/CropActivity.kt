@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hsm.beardylog.databinding.ActivityCropBinding
@@ -19,15 +18,21 @@ class CropActivity : AppBaseActivity() {
         binding = ActivityCropBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.toolbar.setNavigationIcon(R.drawable.ic_back)
-        binding.toolbar.navigationIcon?.let { DrawableCompat.setTint(it, ContextCompat.getColor(this, R.color.text_primary)) }
-        binding.toolbar.setNavigationOnClickListener { requestClose() }
+        binding.toolbar.navigationIcon?.let { DrawableCompat.setTint(it, appColor(R.color.text_primary)) }
+        binding.toolbar.setNavigationOnClickListener { view ->
+            view.clickHaptic()
+            requestClose()
+        }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 requestClose()
             }
         })
         intent.getStringExtra(EXTRA_URI)?.let { binding.cropView.setImage(Uri.parse(it)) }
-        binding.saveCropButton.setOnClickListener { saveCrop() }
+        binding.saveCropButton.setOnClickListener { view ->
+            view.clickHaptic()
+            saveCrop()
+        }
     }
 
     private fun requestClose() {
@@ -44,10 +49,21 @@ class CropActivity : AppBaseActivity() {
     }
 
     private fun saveCrop() {
-        val cropped = binding.cropView.croppedBitmap() ?: return
-        val output = File(cacheDir, "profile_${System.currentTimeMillis()}.jpg")
+        val cropped = binding.cropView.croppedBitmap() ?: run {
+            binding.saveCropButton.rejectHaptic()
+            return
+        }
+        val photoDirectory = File(filesDir, "profile_photos").apply { mkdirs() }
+        if (!photoDirectory.isDirectory) {
+            cropped.recycle()
+            binding.saveCropButton.rejectHaptic()
+            showBriefToast("프로필 사진을 저장할 공간을 만들지 못했습니다")
+            return
+        }
+        val output = File(photoDirectory, "profile_${System.currentTimeMillis()}.jpg")
         FileOutputStream(output).use { stream -> cropped.compress(Bitmap.CompressFormat.JPEG, 92, stream) }
         cropped.recycle()
+        binding.saveCropButton.confirmHaptic()
         setResult(RESULT_OK, intent.putExtra(EXTRA_RESULT_URI, Uri.fromFile(output).toString()))
         finish()
     }

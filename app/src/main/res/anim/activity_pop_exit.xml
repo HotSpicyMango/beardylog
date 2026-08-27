@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 뒤로가기로 닫히는 현재 화면: 오른쪽으로 살짝 밀려나며 사라진다. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:anim/accelerate_interpolator">
+    <translate
+        android:fromXDelta="0"
+        android:toXDelta="8%p"
+        android:duration="220" />
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0"
+        android:duration="220" />
+</set>

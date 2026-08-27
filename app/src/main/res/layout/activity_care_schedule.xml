@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/surface_alt" android:orientation="vertical">
-    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/surface_alt" android:title="식단 및 관리 일정" android:titleTextColor="@color/text_primary" android:navigationIcon="@drawable/ic_back" app:navigationIconTint="@color/text_primary" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/beardyBackground" android:orientation="vertical">
+    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="?attr/beardyBackground" android:title="식단 및 관리 일정" android:titleTextColor="?attr/beardyTextPrimary" android:navigationIcon="@drawable/ic_back" app:navigationIconTint="?attr/beardyTextPrimary" />
     <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="새 일정 등록" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="새 일정 등록" android:textColor="?attr/beardyTextPrimary" android:textSize="18sp" android:textStyle="bold" />
             <RadioGroup android:id="@+id/modeGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                <RadioButton android:id="@+id/oneTimeRadio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="특정 날짜" android:textColor="@color/text_primary" />
-                <RadioButton android:id="@+id/repeatRadio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:text="요일 반복" android:textColor="@color/text_primary" />
+                <RadioButton android:id="@+id/oneTimeRadio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="특정 날짜" android:textColor="?attr/beardyTextPrimary" />
+                <RadioButton android:id="@+id/repeatRadio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:text="요일 반복" android:textColor="?attr/beardyTextPrimary" />
             </RadioGroup>
-            <com.google.android.material.button.MaterialButton android:id="@+id/dateButton" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/text_primary" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dateButton" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="?attr/beardyTextPrimary" />
             <Spinner android:id="@+id/daySpinner" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone" android:entries="@array/week_days" />
             <Spinner android:id="@+id/typeSpinner" android:layout_width="match_parent" android:layout_height="wrap_content" android:entries="@array/care_types" />
-            <EditText android:id="@+id/memoInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="메모 (예: 귀뚜라미 5마리)" android:inputType="textCapSentences|textMultiLine" android:minLines="2" android:textColor="@color/text_primary" android:textColorHint="@color/text_secondary" />
+            <EditText android:id="@+id/memoInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="메모 (예: 귀뚜라미 5마리)" android:inputType="textCapSentences|textMultiLine" android:minLines="2" android:textColor="?attr/beardyTextPrimary" android:textColorHint="?attr/beardyTextSecondary" />
             <com.google.android.material.button.MaterialButton android:id="@+id/saveButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="일정 저장" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="등록된 일정" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="등록된 일정" android:textColor="?attr/beardyTextPrimary" android:textSize="18sp" android:textStyle="bold" />
             <LinearLayout android:id="@+id/scheduleList" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="vertical" />
         </LinearLayout>
     </ScrollView>

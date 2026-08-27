@@ -10,7 +10,6 @@ import android.widget.LinearLayout
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -51,8 +50,11 @@ class CareScheduleActivity : AppBaseActivity() {
         database = AppDatabase.getInstance(applicationContext)
         val reptileId = intent.getLongExtra(EXTRA_REPTILE_ID, -1L)
         binding.toolbar.setNavigationIcon(R.drawable.ic_back)
-        binding.toolbar.navigationIcon?.let { DrawableCompat.setTint(it, ContextCompat.getColor(this, R.color.text_primary)) }
-        binding.toolbar.setNavigationOnClickListener { requestClose() }
+        binding.toolbar.navigationIcon?.let { DrawableCompat.setTint(it, appColor(R.color.text_primary)) }
+        binding.toolbar.setNavigationOnClickListener { view ->
+            view.clickHaptic()
+            requestClose()
+        }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 requestClose()
@@ -60,9 +62,20 @@ class CareScheduleActivity : AppBaseActivity() {
         })
         updateDateButton()
         initialFormState = currentFormState()
-        binding.modeGroup.setOnCheckedChangeListener { _, checkedId -> updateMode(checkedId == R.id.repeatRadio) }
-        binding.dateButton.setOnClickListener { pickDate() }
-        binding.saveButton.setOnClickListener { saveSchedule(reptileId) }
+        binding.modeGroup.setOnCheckedChangeListener { _, checkedId ->
+            if (binding.oneTimeRadio.isPressed || binding.repeatRadio.isPressed) {
+                binding.modeGroup.selectionHaptic()
+            }
+            updateMode(checkedId == R.id.repeatRadio)
+        }
+        binding.dateButton.setOnClickListener { view ->
+            view.clickHaptic()
+            pickDate()
+        }
+        binding.saveButton.setOnClickListener { view ->
+            view.clickHaptic()
+            saveSchedule(reptileId)
+        }
         database.careScheduleDao().observeForReptile(reptileId).observe(this) {
             schedules = it
             renderSchedules()
@@ -110,9 +123,11 @@ class CareScheduleActivity : AppBaseActivity() {
                 binding.saveButton.text = "일정 저장"
                 binding.saveButton.isEnabled = true
                 initialFormState = currentFormState()
+                binding.saveButton.confirmHaptic()
                 showBriefToast("저장했습니다")
             }.onFailure {
                 binding.saveButton.isEnabled = true
+                binding.saveButton.rejectHaptic()
                 showBriefToast("저장하지 못했습니다")
             }
         }
@@ -124,7 +139,7 @@ class CareScheduleActivity : AppBaseActivity() {
         if (schedules.isEmpty()) {
             binding.scheduleList.addView(TextView(this).apply {
                 text = "등록된 일정이 없습니다"
-                setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                setTextColor(context.appColor(R.color.text_secondary))
                 setPadding(0, dp(8), 0, dp(8))
             })
             return
@@ -153,7 +168,7 @@ class CareScheduleActivity : AppBaseActivity() {
                 } else {
                     "매주 ${dayLabels[entries.first().first.repeatDayOfWeek!! - 1]}요일"
                 }
-                setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+                setTextColor(context.appColor(R.color.text_primary))
                 textSize = 17f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
@@ -168,8 +183,11 @@ class CareScheduleActivity : AppBaseActivity() {
                     }
                     isChecked = status == "완료"
                     isEnabled = effectiveDate != null
-                    setTextColor(ContextCompat.getColor(context, if (status == "미실시") R.color.danger else R.color.text_secondary))
-                    setOnClickListener { effectiveDate?.let { setStatus(schedule, it, if (isChecked) "완료" else "미실시") } }
+                    setTextColor(context.appColor(if (status == "미실시") R.color.danger else R.color.text_secondary))
+                    setOnClickListener { view ->
+                        view.selectionHaptic()
+                        effectiveDate?.let { setStatus(schedule, it, if (isChecked) "완료" else "미실시") }
+                    }
                     layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                 }
                 val actions = LinearLayout(this).apply {
@@ -179,12 +197,18 @@ class CareScheduleActivity : AppBaseActivity() {
                 actions.addView(MaterialButton(this@CareScheduleActivity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
                     text = "수정"
                     applyScheduleActionButtonStyle(R.color.forest)
-                    setOnClickListener { beginEdit(schedule) }
+                    setOnClickListener { view ->
+                        view.clickHaptic()
+                        beginEdit(schedule)
+                    }
                 })
                 actions.addView(MaterialButton(this@CareScheduleActivity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
                     text = "삭제"
                     applyScheduleActionButtonStyle(R.color.danger)
-                    setOnClickListener { confirmDelete(schedule) }
+                    setOnClickListener { view ->
+                        view.clickHaptic()
+                        confirmDelete(schedule)
+                    }
                 })
                 row.addView(actions)
             }
@@ -193,7 +217,7 @@ class CareScheduleActivity : AppBaseActivity() {
     }
 
     private fun MaterialButton.applyScheduleActionButtonStyle(colorRes: Int) {
-        val actionColor = ColorStateList.valueOf(ContextCompat.getColor(this@CareScheduleActivity, colorRes))
+        val actionColor = ColorStateList.valueOf(this@CareScheduleActivity.appColor(colorRes))
         minWidth = 0
         minimumWidth = 0
         minHeight = dp(36)
@@ -203,7 +227,7 @@ class CareScheduleActivity : AppBaseActivity() {
         strokeWidth = dp(1)
         strokeColor = actionColor
         setTextColor(actionColor)
-        backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@CareScheduleActivity, R.color.surface_card))
+        backgroundTintList = ColorStateList.valueOf(this@CareScheduleActivity.appColor(R.color.surface_card))
         setPadding(dp(10), 0, dp(10), 0)
         layoutParams = LinearLayout.LayoutParams(-2, dp(36)).apply {
             marginStart = dp(6)

@@ -17,6 +17,8 @@ public class Reptile {
     public long createdAt;
     @Nullable public Long hatchingDate;
     @Nullable public Long adoptionDate;
+    @Nullable public Long deathDate;
+    @Nullable public String memorialNote;
 
     public Reptile(long id, String name, String species, String morph, String gender, long referenceDate, String referenceDateType, @Nullable String photoUri, long createdAt) {
         this.id = id; this.name = name; this.species = species; this.morph = morph; this.gender = gender;

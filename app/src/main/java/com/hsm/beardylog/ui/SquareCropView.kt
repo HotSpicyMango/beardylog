@@ -24,6 +24,7 @@ class SquareCropView @JvmOverloads constructor(context: Context, attrs: Attribut
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
     private val guidePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x99FFFFFF.toInt(); style = Paint.Style.STROKE; strokeWidth = 1f }
     private var bitmap: Bitmap? = null
+    private val drawMatrix = Matrix()
     private var scale = 1f
     private var minScale = 1f
     private var offsetX = 0f
@@ -42,11 +43,24 @@ class SquareCropView @JvmOverloads constructor(context: Context, attrs: Attribut
 
     fun setImage(uri: Uri) {
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return
-        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return
+        // 카메라 원본은 수천 px에 달해 무압축으로 그대로 디코드하면 메모리 스파이크/OOM 위험이 있어,
+        // 크롭 화면에서 실제로 필요한 해상도 정도로만 다운샘플링해서 디코드한다.
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        val sampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, MAX_DECODE_DIMENSION)
+        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sampleSize }) ?: return
         val orientation = ByteArrayInputStream(bytes).use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }
         bitmap?.recycle()
         bitmap = applyExifOrientation(decoded, orientation)
         resetImagePosition()
+    }
+
+    private fun calculateInSampleSize(rawWidth: Int, rawHeight: Int, maxDimension: Int): Int {
+        var sampleSize = 1
+        while (rawWidth / (sampleSize * 2) >= maxDimension || rawHeight / (sampleSize * 2) >= maxDimension) {
+            sampleSize *= 2
+        }
+        return sampleSize
     }
 
     private fun applyExifOrientation(source: Bitmap, orientation: Int): Bitmap {
@@ -74,11 +88,10 @@ class SquareCropView @JvmOverloads constructor(context: Context, attrs: Attribut
         super.onDraw(canvas)
         canvas.drawColor(Color.BLACK)
         bitmap?.let { image ->
-            val matrix = Matrix().apply {
-                postScale(scale, scale)
-                postTranslate(offsetX, offsetY)
-            }
-            canvas.drawBitmap(image, matrix, bitmapPaint)
+            drawMatrix.reset()
+            drawMatrix.postScale(scale, scale)
+            drawMatrix.postTranslate(offsetX, offsetY)
+            canvas.drawBitmap(image, drawMatrix, bitmapPaint)
         }
         val crop = cropRect()
         canvas.drawRect(0f, 0f, width.toFloat(), crop.top, overlayPaint)
@@ -143,5 +156,11 @@ class SquareCropView @JvmOverloads constructor(context: Context, attrs: Attribut
         val scaledHeight = image.height * scale
         offsetX = if (scaledWidth <= crop.width()) crop.centerX() - scaledWidth / 2f else offsetX.coerceIn(crop.right - scaledWidth, crop.left)
         offsetY = if (scaledHeight <= crop.height()) crop.centerY() - scaledHeight / 2f else offsetY.coerceIn(crop.bottom - scaledHeight, crop.top)
+    }
+
+    private companion object {
+        // 크롭 UI가 화면에 보여주는 크기를 고려했을 때 이 이상 해상도는 크롭 품질에 도움이 안 되면서
+        // 메모리만 잡아먹으므로, 디코드 단계에서 이 정도로 다운샘플링한다.
+        const val MAX_DECODE_DIMENSION = 1600
     }
 }

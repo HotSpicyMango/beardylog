@@ -3,21 +3,77 @@
     <style name="Base.Theme.Beardylog" parent="Theme.Material3.Light.NoActionBar">
         <item name="fontFamily">@font/pretendard</item>
         <item name="android:fontFamily">@font/pretendard</item>
-        <item name="colorPrimary">@color/button_primary</item>
-        <item name="colorSecondary">@color/button_primary</item>
-        <item name="colorSecondaryContainer">@color/forest_light</item>
-        <item name="colorOnSecondaryContainer">@color/forest</item>
-        <item name="colorSurface">@color/surface_card</item>
-        <item name="colorSurfaceVariant">@color/forest_light</item>
-        <item name="colorOnSurface">@color/text_primary</item>
-        <item name="colorOnPrimary">@color/button_on_primary</item>
-        <item name="android:colorBackground">@color/surface_alt</item>
-        <item name="android:windowBackground">@color/surface_alt</item>
-        <item name="android:statusBarColor">@color/surface_alt</item>
-        <item name="android:navigationBarColor">@color/surface_alt</item>
+        <item name="beardyAccent">@color/palette_ocean_accent</item>
+        <item name="beardyAccentContainer">@color/palette_ocean_container</item>
+        <item name="beardyBackground">@color/palette_ocean_background</item>
+        <item name="beardySurface">@color/palette_ocean_surface</item>
+        <item name="beardyTextPrimary">@color/palette_text_primary</item>
+        <item name="beardyTextSecondary">@color/palette_text_secondary</item>
+        <item name="beardyButtonPrimary">@color/palette_ocean_button</item>
+        <item name="beardyOnButtonPrimary">@color/palette_on_button</item>
+        <item name="beardyDanger">@color/palette_danger</item>
+        <item name="colorPrimary">?attr/beardyButtonPrimary</item>
+        <item name="colorSecondary">?attr/beardyButtonPrimary</item>
+        <item name="colorSecondaryContainer">?attr/beardyAccentContainer</item>
+        <item name="colorOnSecondaryContainer">?attr/beardyAccent</item>
+        <item name="colorSurface">?attr/beardySurface</item>
+        <item name="colorSurfaceVariant">?attr/beardyAccentContainer</item>
+        <item name="colorOnSurface">?attr/beardyTextPrimary</item>
+        <item name="colorOnSurfaceVariant">?attr/beardyTextSecondary</item>
+        <item name="colorOnPrimary">?attr/beardyOnButtonPrimary</item>
+        <item name="colorError">?attr/beardyDanger</item>
+        <item name="android:colorBackground">?attr/beardyBackground</item>
+        <item name="android:windowBackground">?attr/beardyBackground</item>
+        <item name="android:statusBarColor">?attr/beardyBackground</item>
+        <item name="android:navigationBarColor">?attr/beardyBackground</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
     </style>
 
     <style name="Theme.Beardylog" parent="Base.Theme.Beardylog" />
+
+    <style name="Theme.Beardylog.Forest" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_forest_accent</item>
+        <item name="beardyAccentContainer">@color/palette_forest_container</item>
+        <item name="beardyBackground">@color/palette_forest_background</item>
+        <item name="beardySurface">@color/palette_forest_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_forest_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Lavender" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_lavender_accent</item>
+        <item name="beardyAccentContainer">@color/palette_lavender_container</item>
+        <item name="beardyBackground">@color/palette_lavender_background</item>
+        <item name="beardySurface">@color/palette_lavender_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_lavender_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Rose" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_rose_accent</item>
+        <item name="beardyAccentContainer">@color/palette_rose_container</item>
+        <item name="beardyBackground">@color/palette_rose_background</item>
+        <item name="beardySurface">@color/palette_rose_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_rose_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Coral" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_coral_accent</item>
+        <item name="beardyAccentContainer">@color/palette_coral_container</item>
+        <item name="beardyBackground">@color/palette_coral_background</item>
+        <item name="beardySurface">@color/palette_coral_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_coral_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Slate" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_slate_accent</item>
+        <item name="beardyAccentContainer">@color/palette_slate_container</item>
+        <item name="beardyBackground">@color/palette_slate_background</item>
+        <item name="beardySurface">@color/palette_slate_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_slate_button</item>
+    </style>
+
+    <style name="TextAppearance.Beardylog.WeightNumber" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/d2</item>
+        <item name="android:fontFamily">@font/d2</item>
+    </style>
 </resources>

@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/button_primary" /><corners android:radius="12dp" /></shape>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="?attr/beardyButtonPrimary" /><corners android:radius="12dp" /></shape>

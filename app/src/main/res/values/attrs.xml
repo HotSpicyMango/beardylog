@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="beardyAccent" format="color" />
+    <attr name="beardyAccentContainer" format="color" />
+    <attr name="beardyBackground" format="color" />
+    <attr name="beardySurface" format="color" />
+    <attr name="beardyTextPrimary" format="color" />
+    <attr name="beardyTextSecondary" format="color" />
+    <attr name="beardyButtonPrimary" format="color" />
+    <attr name="beardyOnButtonPrimary" format="color" />
+    <attr name="beardyDanger" format="color" />
+</resources>

@@ -1,6 +1,7 @@
 package com.hsm.beardylog.ui
 
 import android.view.LayoutInflater
+import android.view.HapticFeedbackConstants
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -23,14 +24,23 @@ class ReptileAdapter(private val onClick: (Reptile) -> Unit) : ListAdapter<Repti
             val ageDate = item.hatchingDate ?: item.adoptionDate ?: item.referenceDate
             val age = Period.between(LocalDate.ofEpochDay(ageDate), LocalDate.now())
             binding.age.text = "${age.years}년 ${age.months}개월"
-            binding.root.setOnClickListener { onClick(item) }
+            binding.root.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                onClick(item)
+            }
         }
     }
 
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<Reptile>() {
             override fun areItemsTheSame(old: Reptile, new: Reptile) = old.id == new.id
-            override fun areContentsTheSame(old: Reptile, new: Reptile) = old == new
+            override fun areContentsTheSame(old: Reptile, new: Reptile) =
+                old.name == new.name &&
+                    old.species == new.species &&
+                    old.morph == new.morph &&
+                    old.hatchingDate == new.hatchingDate &&
+                    old.adoptionDate == new.adoptionDate &&
+                    old.referenceDate == new.referenceDate
         }
     }
 }
