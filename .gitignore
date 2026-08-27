@@ -1,6 +1,7 @@
 *.iml
 .gradle
 .gradle-user-home/
+.kotlin/
 /local.properties
 /.idea/
 /.idea/caches
@@ -15,3 +16,14 @@
 .externalNativeBuild
 .cxx
 local.properties
+*.hprof
+*.log
+
+# Local signing and release artifacts
+*.jks
+*.keystore
+/app/release/
+/release/
+
+# Firebase config (contains a project-specific API key; keep local, don't publish)
+/app/google-services.json
