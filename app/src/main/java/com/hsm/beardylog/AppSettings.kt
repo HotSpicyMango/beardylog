@@ -32,6 +32,13 @@ internal class AppSettings(context: Context) {
             }.apply()
         }
 
+    /** false = 안정 채널(정식 릴리즈만), true = 베타 채널(프리릴리즈 포함). */
+    var updateChannelIsBeta: Boolean
+        get() = preferences.getBoolean(KEY_UPDATE_CHANNEL_BETA, false)
+        set(value) {
+            preferences.edit().putBoolean(KEY_UPDATE_CHANNEL_BETA, value).apply()
+        }
+
     var lastDriveBackupAt: Long?
         get() = preferences.getLong(KEY_LAST_DRIVE_BACKUP_AT, 0L).takeIf { it > 0L }
         set(value) {
@@ -47,5 +54,6 @@ internal class AppSettings(context: Context) {
         const val KEY_PROFILE_SORT_MODE = "profile_sort_mode"
         const val KEY_LAST_SELECTED_PROFILE_ID = "last_selected_profile_id"
         const val KEY_LAST_DRIVE_BACKUP_AT = "last_drive_backup_at"
+        const val KEY_UPDATE_CHANNEL_BETA = "update_channel_beta"
     }
 }

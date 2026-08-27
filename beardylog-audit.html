@@ -1,0 +1,803 @@
+<title>BeardyLog 결함 진단</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  /* ── 토큰: 앱 자체 팔레트(colors.xml ocean)에서 그대로 가져옴 ────────── */
+  :root {
+    --ground:      #F4F9FC;
+    --surface:     #FFFFFF;
+    --surface-sub: #EDF5F9;
+    --ink:         #15232B;
+    --ink-muted:   #5E707A;
+    --ink-faint:   #8A9BA5;
+    --accent:      #2F739F;
+    --accent-soft: #DCEFF8;
+    --hairline:    #D3E4ED;
+
+    --sev-crit:    #BA1A1A;
+    --sev-crit-bg: #FBE7E7;
+    --sev-high:    #9A5108;
+    --sev-high-bg: #FBEEDD;
+    --sev-med:     #4B6472;
+    --sev-med-bg:  #E6EDF1;
+
+    --code-bg:     #F2F7FA;
+    --code-ink:    #23404F;
+
+    --shadow: 0 1px 2px rgba(21,35,43,.05), 0 8px 24px -16px rgba(21,35,43,.22);
+
+    --step--1: clamp(.78rem, .76rem + .1vw, .84rem);
+    --step-0:  clamp(.95rem, .92rem + .15vw, 1.02rem);
+    --step-1:  clamp(1.1rem, 1.04rem + .3vw, 1.28rem);
+    --step-2:  clamp(1.35rem, 1.22rem + .6vw, 1.7rem);
+    --step-3:  clamp(1.9rem, 1.5rem + 1.9vw, 3.1rem);
+
+    --measure: 66ch;
+    --pad: clamp(1.15rem, .8rem + 1.4vw, 2rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0D171C;
+      --surface:     #16242B;
+      --surface-sub: #1B2C34;
+      --ink:         #E6F2F7;
+      --ink-muted:   #AABBC4;
+      --ink-faint:   #7A8D97;
+      --accent:      #8BC9E8;
+      --accent-soft: #20485A;
+      --hairline:    #233A45;
+
+      --sev-crit:    #FF8A8A;
+      --sev-crit-bg: #3A1C1C;
+      --sev-high:    #F0B872;
+      --sev-high-bg: #362715;
+      --sev-med:     #A8BDC9;
+      --sev-med-bg:  #22333C;
+
+      --code-bg:     #101D24;
+      --code-ink:    #C6DDE8;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0D171C;
+    --surface:     #16242B;
+    --surface-sub: #1B2C34;
+    --ink:         #E6F2F7;
+    --ink-muted:   #AABBC4;
+    --ink-faint:   #7A8D97;
+    --accent:      #8BC9E8;
+    --accent-soft: #20485A;
+    --hairline:    #233A45;
+
+    --sev-crit:    #FF8A8A;
+    --sev-crit-bg: #3A1C1C;
+    --sev-high:    #F0B872;
+    --sev-high-bg: #362715;
+    --sev-med:     #A8BDC9;
+    --sev-med-bg:  #22333C;
+
+    --code-bg:     #101D24;
+    --code-ink:    #C6DDE8;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: var(--step-0);
+    line-height: 1.72;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+  }
+
+  .wrap {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: clamp(2.2rem, 1rem + 4vw, 4.5rem) var(--pad) 6rem;
+  }
+
+  /* ── 헤더 ─────────────────────────────────────────────── */
+  .masthead { display: flex; flex-direction: column; gap: .9rem; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  h1 {
+    font-family: "Gowun Batang", "Apple SD Gothic Neo", serif;
+    font-weight: 700;
+    font-size: var(--step-3);
+    line-height: 1.15;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    max-width: var(--measure);
+    color: var(--ink-muted);
+    font-size: var(--step-1);
+    line-height: 1.65;
+    font-weight: 300;
+    margin: 0;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem 1.4rem;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    padding-top: .6rem;
+    border-top: 1px solid var(--hairline);
+    margin-top: .5rem;
+  }
+  .meta b { color: var(--ink-muted); font-weight: 500; }
+
+  /* ── 심각도 요약 ───────────────────────────────────────── */
+  .tally {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: .75rem;
+    margin: 2.6rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tally li {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    border-left: 4px solid var(--bar, var(--hairline));
+  }
+  .tally .n {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 2.1rem;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--bar, var(--ink));
+  }
+  .tally .lbl { font-size: var(--step--1); color: var(--ink-muted); }
+  .tally .crit { --bar: var(--sev-crit); }
+  .tally .high { --bar: var(--sev-high); }
+  .tally .med  { --bar: var(--sev-med); }
+  .tally .tot  { --bar: var(--accent); }
+
+  /* ── 우선순위 박스 ─────────────────────────────────────── */
+  .priority {
+    margin: 2.6rem 0 0;
+    background: var(--accent-soft);
+    border-radius: 4px;
+    padding: 1.4rem clamp(1.1rem, 3vw, 1.8rem);
+  }
+  .priority h2 {
+    margin: 0 0 .7rem;
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: .01em;
+  }
+  .priority ol { margin: 0; padding-left: 1.35rem; display: flex; flex-direction: column; gap: .3rem; }
+  .priority li { font-size: var(--step-0); }
+  .priority code { background: transparent; padding: 0; }
+
+  /* ── 섹션 ─────────────────────────────────────────────── */
+  section { margin-top: 3.6rem; }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: .8rem;
+    padding-bottom: .6rem;
+    border-bottom: 2px solid var(--band, var(--hairline));
+    margin-bottom: 1.4rem;
+  }
+  .sec-head h2 {
+    font-family: "Gowun Batang", serif;
+    font-size: var(--step-2);
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -.01em;
+  }
+  .sec-head .note {
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+    margin-left: auto;
+    text-align: right;
+  }
+  .sec-crit { --band: var(--sev-crit); }
+  .sec-high { --band: var(--sev-high); }
+  .sec-med  { --band: var(--sev-med); }
+
+  /* ── 결함 카드 ─────────────────────────────────────────── */
+  .findings { display: flex; flex-direction: column; gap: 1rem; }
+
+  article {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-left: 4px solid var(--band, var(--hairline));
+    border-radius: 3px;
+    padding: clamp(1.05rem, 2.5vw, 1.6rem);
+    box-shadow: var(--shadow);
+  }
+
+  .f-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .55rem .8rem; }
+
+  .fid {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: .06em;
+    background: var(--chip-bg, var(--surface-sub));
+    color: var(--band, var(--ink-muted));
+    padding: .15rem .5rem;
+    border-radius: 2px;
+    flex: none;
+  }
+  .sec-crit .fid { --chip-bg: var(--sev-crit-bg); }
+  .sec-high .fid { --chip-bg: var(--sev-high-bg); }
+  .sec-med  .fid { --chip-bg: var(--sev-med-bg); }
+
+  article h3 {
+    margin: 0;
+    font-size: var(--step-1);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -.005em;
+    flex: 1 1 16rem;
+    text-wrap: balance;
+  }
+
+  .loc {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    margin: .55rem 0 0;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+  .loc span { color: var(--accent); }
+
+  .rows { margin: 1rem 0 0; display: flex; flex-direction: column; gap: .6rem; }
+  .row { display: grid; grid-template-columns: 4.6rem 1fr; gap: .9rem; align-items: start; }
+  .row > dt {
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: var(--ink-faint);
+    letter-spacing: .04em;
+    padding-top: .28rem;
+  }
+  .row > dd { margin: 0; max-width: var(--measure); }
+
+  pre {
+    margin: .9rem 0 0;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    padding: .85rem 1rem;
+    overflow-x: auto;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .8rem;
+    line-height: 1.65;
+    tab-size: 2;
+  }
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .88em;
+    background: var(--surface-sub);
+    padding: .08em .34em;
+    border-radius: 2px;
+  }
+  pre code { background: transparent; padding: 0; font-size: 1em; }
+  .del { color: var(--sev-crit); }
+  .add { color: var(--accent); font-weight: 500; }
+  .cmt { color: var(--ink-faint); font-style: italic; }
+
+  /* ── 마무리 ───────────────────────────────────────────── */
+  .closing {
+    margin-top: 3.6rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--hairline);
+    color: var(--ink-muted);
+    max-width: var(--measure);
+    font-size: var(--step-0);
+  }
+  .closing strong { color: var(--ink); font-weight: 600; }
+
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">코드 진단 · Android</div>
+    <h1>BeardyLog 결함 진단</h1>
+    <p class="standfirst">
+      오픈베타 코드베이스 전체를 훑어 <b>앱이 실제로 죽거나, 기록을 잃거나, 조용히 틀린 값을 보여주는</b> 지점 22곳을 찾았습니다.
+      각 항목은 재현 조건과 고칠 코드까지 함께 정리했습니다.
+    </p>
+    <div class="meta">
+      <span><b>대상</b> com.hsm.beardylog v0.1.0 (11)</span>
+      <span><b>범위</b> app/src/main · 8,308줄</span>
+      <span><b>구성</b> Kotlin + Java · Room v9 · minSdk 26</span>
+      <span><b>진단일</b> 2026-08-27</span>
+    </div>
+  </header>
+
+  <ul class="tally">
+    <li class="crit"><span class="n">6</span><span class="lbl">치명 — 앱 종료 / 데이터 손실</span></li>
+    <li class="high"><span class="n">8</span><span class="lbl">높음 — 오작동 / 유실 누적</span></li>
+    <li class="med"><span class="n">8</span><span class="lbl">보통 — 방어 부족</span></li>
+    <li class="tot"><span class="n">22</span><span class="lbl">전체 항목</span></li>
+  </ul>
+
+  <div class="priority">
+    <h2>다음 릴리즈에 이 다섯 개만 먼저 넣어도 체감이 크게 달라집니다</h2>
+    <ol>
+      <li><b>C-01</b> 추억앨범 전체보기 이미지 로딩을 Glide로 교체 — 지금 구조에서는 사진 몇 장만 있어도 강제 종료됩니다.</li>
+      <li><b>C-04</b> Room에 <code>fallbackToDestructiveMigrationOnDowngrade()</code> 추가 — 베타 테스터가 구버전 APK를 깔면 앱이 켜지지 않습니다.</li>
+      <li><b>C-02</b> 사진 삭제 코루틴에 <code>runCatching</code> — 앱 전체에서 유일하게 예외가 새는 자리입니다.</li>
+      <li><b>H-01</b> 홈 "이번 주" 범위를 매번 다시 계산 — 앱을 하루 이상 켜두면 지난 주 식단이 보입니다.</li>
+      <li><b>M-06</b> Crashlytics 연결 — 지금은 테스터가 겪은 크래시를 볼 방법이 없습니다.</li>
+    </ol>
+  </div>
+
+  <!-- ══════════════ 치명 ══════════════ -->
+  <section class="sec-crit">
+    <div class="sec-head">
+      <h2>치명</h2>
+      <span class="note">앱이 종료되거나 기록이 사라집니다</span>
+    </div>
+
+    <div class="findings">
+
+      <article>
+        <div class="f-head"><span class="fid">C-01</span><h3>추억앨범 전체보기가 원본 사진을 메인 스레드에서 통째로 디코딩합니다</h3></div>
+        <p class="loc"><span>MemorialAlbumActivity.kt:221</span> · <span>MemorialAlbumActivity.kt:68–84</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>추억 앨범에서 사진을 눌러 크게 볼 때 스와이프마다 화면이 멈추고, 사진이 몇 장 쌓이면 <code>OutOfMemoryError</code>로 앱이 종료됩니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>ImageView.setImageURI()</code>는 다운샘플링 없이 메인 스레드에서 동기 디코딩합니다. 게다가 <code>savePhotos()</code>가 갤러리 원본을 리사이즈 없이 그대로 복사해 두기 때문에, 1200만 화소 사진 한 장이 ARGB_8888로 약 48MB를 차지합니다. ViewPager2가 좌우 페이지를 함께 들고 있으므로 순간적으로 100MB 이상이 잡힙니다. 목록 그리드는 이미 Glide를 쓰는데 전체보기만 빠져 있습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>전체보기도 Glide에 맡기고, 저장 단계에서 긴 변 기준으로 한 번 줄여서 저장합니다.</dd></div>
+        </dl>
+<pre><code><span class="cmt">// MemorialPhotoPagerAdapter.onBindViewHolder</span>
+<span class="del">- holder.imageView.setImageURI(Uri.parse(photo.photoUri))</span>
+<span class="add">+ Glide.with(holder.imageView)
++     .load(Uri.parse(photo.photoUri))
++     .override(displayWidth, displayHeight)   // 화면 크기까지만 디코딩
++     .fitCenter()
++     .into(holder.imageView)</span>
+
+<span class="cmt">// savePhotos: 원본 통복사 대신 긴 변 2048px로 축소 후 JPEG 저장</span>
+<span class="add">+ val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
++ contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
++ val opts = BitmapFactory.Options().apply {
++     inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, 2048)
++ }
++ val bitmap = contentResolver.openInputStream(uri)?.use {
++     BitmapFactory.decodeStream(it, null, opts)
++ } ?: return@forEachIndexed
++ output.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
++ bitmap.recycle()</span></code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">C-02</span><h3>추억사진 삭제만 예외 처리가 빠져 있어 실패하면 앱이 그대로 죽습니다</h3></div>
+        <p class="loc"><span>MemorialAlbumActivity.kt:233–239</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>사진 삭제 중 DB 접근이 실패하면 토스트도 없이 앱이 강제 종료됩니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd>앱의 다른 모든 DB 작업은 <code>runCatching</code>으로 감싸져 있는데 이 한 곳만 맨몸입니다. <code>lifecycleScope.launch</code> 안에서 던져진 예외는 기본 핸들러로 전파되어 프로세스를 종료시킵니다. 또한 <code>onDeleted()</code>가 <code>dialog.dismiss()</code>를 호출하는데, 그 사이 화면이 닫혔다면 여기서도 터집니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>다른 삭제 경로와 동일한 형태로 맞춥니다.</dd></div>
+        </dl>
+<pre><code>lifecycleScope.launch {
+<span class="add">+   runCatching {</span>
+        withContext(Dispatchers.IO) {
+            database.memorialPhotoDao().deleteById(photo.id)
+            runCatching { Uri.parse(photo.photoUri).path?.let { File(it).delete() } }
+        }
+<span class="add">+   }.onSuccess {
++       onDeleted()
++   }.onFailure {
++       showBriefToast("사진을 삭제하지 못했습니다")
++   }</span>
+}</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">C-03</span><h3>Drive 백업이 모든 사진을 하나의 JSON 문자열로 메모리에 쌓습니다</h3></div>
+        <p class="loc"><span>ProfileBackupManager.kt:41–51</span> · <span>ProfileBackupManager.kt:53–66</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>사진이 많은 사용자가 백업 또는 복원을 누르면 <code>OutOfMemoryError</code>로 종료됩니다. 실패해도 원인을 알 수 없어 "백업이 안 된다"로만 보고됩니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd>모든 사진 바이트 → Base64 문자열(용량 ×1.33) → <code>JSONObject</code> → <code>toString()</code> → <code>toByteArray()</code>가 순차적으로 만들어지며 <b>전부 동시에 힙에 존재</b>합니다. 원본 사진 총량의 3~4배가 한꺼번에 필요합니다. 사진 30장(90MB)이면 이미 300MB 이상이고, 일반적인 앱 힙 상한(256~512MB)을 넘습니다. 복원 경로도 동일하게 응답 전체를 <code>ByteArray</code> → <code>String</code> → <code>JSONObject</code>로 부풀립니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>구조를 바꾸는 일이라 <b>C-01의 사진 축소가 선행되면 위험이 크게 줄어듭니다</b>. 근본 해결은 두 방향 중 하나입니다.<br>
+            ① <b>ZIP 컨테이너로 전환</b> — <code>manifest.json</code>(DB 레코드만) + 사진은 원본 바이트 그대로 엔트리로. <code>ZipOutputStream</code>을 파일에 직접 흘려보내므로 메모리에 남는 건 버퍼뿐입니다. Base64 오버헤드도 사라져 업로드 용량이 25% 줄어듭니다.<br>
+            ② <b>지금 형식을 유지한다면</b> 최소한 <code>JsonWriter</code>로 <code>OutputStream</code>에 직접 스트리밍 기록하고, 업로드는 <code>setChunkedStreamingMode</code>로 바꿉니다.<br>
+            어느 쪽이든 <code>SCHEMA_VERSION</code>을 올리고, 구버전 백업도 읽을 수 있게 분기해 두세요.</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">C-04</span><h3>구버전 APK를 설치하면 앱이 영구히 켜지지 않습니다</h3></div>
+        <p class="loc"><span>AppDatabase.java:23–29</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>베타 채널에서 프리릴리즈를 써 본 테스터가 안정 버전으로 되돌리면, 실행 즉시 <code>IllegalStateException</code>으로 종료됩니다. 재설치 말고는 복구 방법이 없고 그 순간 <b>모든 기록이 사라집니다</b>.</dd></div>
+          <div class="row"><dt>원인</dt><dd>Room은 저장된 DB 버전이 코드의 버전보다 높으면 다운그레이드로 판단해 예외를 던집니다. GitHub Releases에서 APK를 직접 받아 설치하는 배포 방식이라 버전 되돌리기가 실제로 일어납니다. 같은 맥락에서 <code>MIGRATION_1_2</code>도 없어(<b>M-02</b>) 최초 빌드 사용자는 실행할 수 없습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>다운그레이드는 데이터를 살릴 방법이 없으므로, 크래시 루프 대신 초기화로 떨어뜨리는 편이 낫습니다. 대신 <b>강등 전에 백업을 권하는 안내</b>를 업데이트 다이얼로그에 넣어 주세요.</dd></div>
+        </dl>
+<pre><code>Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, "beardylog.db")
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, /* … */ MIGRATION_8_9)
+<span class="add">+       .fallbackToDestructiveMigrationOnDowngrade()</span>
+        .build();</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">C-05</span><h3>다운로드 관리자가 꺼진 기기에서 업데이트를 누르면 앱이 종료됩니다</h3></div>
+        <p class="loc"><span>SettingsSection.kt:830–847</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>업데이트 다이얼로그의 "다운로드"를 누르는 순간 강제 종료됩니다. 일부 사용자가 시스템 앱 "다운로드 관리자"를 비활성화해 둔 경우 재현됩니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>downloadManager.enqueue(request)</code>는 DownloadManager가 비활성이면 <code>IllegalArgumentException: Unknown URL content://downloads/my_downloads</code>를 던집니다. 이 호출과 <code>getExternalFilesDir</code>(외장 저장소 미마운트 시 null 반환) 어느 쪽도 보호되어 있지 않습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>실패하면 브라우저로 릴리즈 페이지를 열어 주는 대체 경로를 둡니다.</dd></div>
+        </dl>
+<pre><code>private fun startApkDownload(release: GitHubUpdateChecker.ReleaseInfo) {
+<span class="add">+   runCatching {</span>
+        val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        <span class="cmt">/* … request 구성 … */</span>
+        pendingApkFile = File(activity.getExternalFilesDir(null), release.assetName)
+        pendingApkDownloadId = downloadManager.enqueue(request)
+        ContextCompat.registerReceiver(<span class="cmt">/* … */</span>)
+<span class="add">+   }.onSuccess {
++       activity.showBriefToast("업데이트 다운로드를 시작합니다")
++   }.onFailure {
++       runCatching {
++           activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.downloadUrl)))
++       }.onFailure { activity.showBriefToast("다운로드를 시작하지 못했습니다") }
++   }</span>
+}</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">C-06</span><h3>사진 자르기 전 과정이 메인 스레드에서, 예외 처리 없이 돌아갑니다</h3></div>
+        <p class="loc"><span>SquareCropView.kt:44–56</span> · <span>CropActivity.kt:51–74</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>큰 사진을 고르면 크롭 화면이 열릴 때 1~2초 굳고, 저장을 누를 때 한 번 더 굳습니다. 저장 공간이 부족하거나 사진 접근 권한이 만료된 상태면 그대로 앱이 종료됩니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>SquareCropView.setImage()</code>가 <code>openInputStream().readBytes()</code>로 원본 전체를 읽고 두 번 디코딩하는데 전부 메인 스레드입니다. 다운샘플링은 잘 되어 있지만 <b>읽기 단계에서 이미 원본 전체가 메모리에 올라옵니다</b>. <code>SecurityException</code>(프로세스 종료 후 URI 권한 소멸), <code>OutOfMemoryError</code> 모두 잡히지 않습니다. <code>CropActivity.saveCrop()</code>의 <code>FileOutputStream(...).use { compress(...) }</code>도 <code>IOException</code>이 그대로 새어 나갑니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>디코딩과 저장을 <code>Dispatchers.IO</code>로 옮기고 실패 시 토스트로 되돌립니다.</dd></div>
+        </dl>
+<pre><code><span class="cmt">// CropActivity.saveCrop()</span>
+lifecycleScope.launch {
+    val cropped = binding.cropView.croppedBitmap() ?: return@launch reject()
+    runCatching {
+        withContext(Dispatchers.IO) {
+            val dir = File(filesDir, "profile_photos").apply { mkdirs() }
+            check(dir.isDirectory) { "저장 공간을 만들지 못했습니다" }
+            File(dir, "profile_${System.currentTimeMillis()}.jpg").also { out -&gt;
+                FileOutputStream(out).use { cropped.compress(Bitmap.CompressFormat.JPEG, 92, it) }
+            }
+        }
+    }.onSuccess { file -&gt;
+        cropped.recycle()
+        setResult(RESULT_OK, intent.putExtra(EXTRA_RESULT_URI, Uri.fromFile(file).toString()))
+        finish()
+    }.onFailure {
+        cropped.recycle()
+        showBriefToast("사진을 저장하지 못했습니다")
+    }
+}
+
+<span class="cmt">// SquareCropView.setImage(uri) → suspend 함수로 바꾸고 디코딩을 IO로,
+// 결과 Bitmap만 메인 스레드에서 적용. 전체를 runCatching으로 감쌀 것.</span></code></pre>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══════════════ 높음 ══════════════ -->
+  <section class="sec-high">
+    <div class="sec-head">
+      <h2>높음</h2>
+      <span class="note">죽지는 않지만 틀린 값을 보여주거나 조용히 쌓입니다</span>
+    </div>
+
+    <div class="findings">
+
+      <article>
+        <div class="f-head"><span class="fid">H-01</span><h3>홈 화면의 "이번 주"가 앱을 켠 순간에 고정됩니다</h3></div>
+        <p class="loc"><span>HomeSection.kt:260–262</span> · <span>HomeSection.kt:80, 113</span> · <span>HomeSection.kt:273</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>앱을 백그라운드에 며칠 두었다가 다시 열면 상단 날짜와 주간 식단표가 <b>지난 주 그대로</b>입니다. 오늘 칸 강조도 엉뚱한 요일에 남습니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>observeCareData()</code>가 <code>setup()</code> 시점에 <code>weekStart</code>를 한 번 계산해 그 값으로 LiveData 쿼리를 걸어 둡니다. Android는 메모리가 넉넉하면 프로세스를 며칠씩 유지하므로 <code>onCreate</code>가 다시 불리지 않습니다. <code>setupActions()</code>의 <code>currentDate.text</code>도 같은 이유로 굳습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd><code>onResume</code>에서 날짜가 바뀌었는지 확인하고, 바뀌었으면 관찰을 다시 겁니다.</dd></div>
+        </dl>
+<pre><code><span class="cmt">// HomeSection</span>
+private var observedWeekStart: LocalDate? = null
+private var careObserverOwner: LifecycleOwner? = null
+
+internal fun refreshIfDateChanged() {
+    val weekStart = LocalDate.now().with(DayOfWeek.MONDAY)
+    if (observedWeekStart == weekStart) return
+    observedWeekStart = weekStart
+    activity.database.careScheduleDao().observeBetween(<span class="cmt">/* … */</span>).removeObservers(activity)
+    observeCareData(weekStart)
+    activity.binding.currentDate.text =
+        LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+    renderDashboard()
+}
+
+<span class="cmt">// MainActivity.onResume()에서 homeSection.refreshIfDateChanged() 호출</span></code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">H-02</span><h3>프로필을 수정하면 추모 정보가 조용히 지워집니다</h3></div>
+        <p class="loc"><span>ReptileEditActivity.kt:187–190</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>추모 프로필의 이름 하나만 고쳐도 <code>deathDate</code>와 <code>memorialNote</code>가 null이 되어, 그 아이가 <b>추억공간에서 사라지고 살아있는 개체 목록으로 돌아옵니다</b>. 남긴 글도 함께 없어집니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>save()</code>가 새 <code>Reptile</code> 객체를 만들면서 <code>hatchingDate</code>·<code>adoptionDate</code>만 복사하고 추모 필드 두 개를 빠뜨립니다. Room의 <code>@Update</code>는 행 전체를 덮어쓰므로 누락된 필드는 null로 저장됩니다. <b>현재 UI 동선상 추모 프로필은 편집 화면에 도달하지 않아 아직 표면화되지 않았지만</b>, 추모 프로필 편집을 여는 순간 즉시 데이터가 유실됩니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>편집 대상의 나머지 필드를 그대로 이어받습니다. <code>ReptileDetailActivity</code>의 추모 전환 코드는 이미 이 방식으로 되어 있으니 형태를 맞추면 됩니다.</dd></div>
+        </dl>
+<pre><code>val reptile = Reptile(<span class="cmt">/* … */</span>).apply {
+    this.hatchingDate = this@ReptileEditActivity.hatchingDate?.toEpochDay()
+    this.adoptionDate = this@ReptileEditActivity.adoptionDate?.toEpochDay()
+<span class="add">+   this.deathDate = editing?.deathDate
++   this.memorialNote = editing?.memorialNote</span>
+}</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">H-03</span><h3>업데이트 수신기를 해제하는 코드가 어디에도 없습니다</h3></div>
+        <p class="loc"><span>SettingsSection.kt:66–73, 839–846</span> · 앱 전체에 <span>onDestroy</span> 미구현</p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>업데이트를 받는 중에 테마를 바꾸거나 화면을 회전하면 <b>다운로드가 끝나도 설치 화면이 뜨지 않습니다</b>. 로그에는 <code>IntentReceiverLeaked</code>가 남고 MainActivity가 통째로 메모리에 붙잡힙니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>apkDownloadReceiver</code>는 다운로드가 완료될 때만 자신을 해제합니다. 그 전에 액티비티가 죽으면 해제 경로가 없습니다. 게다가 <code>pendingApkDownloadId</code>·<code>pendingApkFile</code>이 SettingsSection 인스턴스 필드라서 재생성 시 함께 사라져, 완료 브로드캐스트가 와도 매칭에 실패합니다. 테마 변경이 <code>activity.recreate()</code>를 부르므로 이 조합은 흔하게 일어납니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>수신기 해제 경로를 만들고, 진행 중인 다운로드 ID는 <code>SharedPreferences</code>에 남겨 재생성 후에도 이어받게 합니다. 중복 등록 방지 플래그도 함께 둡니다.</dd></div>
+        </dl>
+<pre><code><span class="cmt">// SettingsSection</span>
+private var receiverRegistered = false
+
+fun release() {                                <span class="cmt">// MainActivity.onDestroy()에서 호출</span>
+    if (receiverRegistered) {
+        runCatching { activity.unregisterReceiver(apkDownloadReceiver) }
+        receiverRegistered = false
+    }
+}
+
+<span class="cmt">// 등록 시</span>
+if (!receiverRegistered) {
+    ContextCompat.registerReceiver(<span class="cmt">/* … */</span>)
+    receiverRegistered = true
+}
+appSettings.pendingApkDownloadId = pendingApkDownloadId   <span class="cmt">// 재생성 대비 저장</span></code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">H-04</span><h3>복원할 때마다 이전 사진 파일이 지워지지 않고 쌓입니다</h3></div>
+        <p class="loc"><span>ProfileBackupManager.kt:85–160</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>복원을 반복할수록 앱 저장 용량이 계속 늘어납니다. 사용자에게는 "쓰지도 않는데 앱 용량이 1GB"로 보입니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>restore()</code>는 DB 행만 전부 지우고 다시 넣습니다. <code>filesDir/profile_photos</code>와 <code>filesDir/memorial_photos</code>에 있던 <b>이전 이미지 파일은 참조를 잃은 채 디스크에 남습니다</b>. 파일명에 타임스탬프가 붙어 덮어쓰기도 되지 않습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>트랜잭션 커밋이 성공한 뒤, DB가 참조하지 않는 파일을 정리합니다. 실패 시 롤백해야 하므로 <b>반드시 커밋 이후</b>여야 합니다.</dd></div>
+        </dl>
+<pre><code><span class="cmt">// database.runInTransaction { … } 이 성공적으로 끝난 뒤</span>
+<span class="add">+ val referenced = buildSet {
++     restoredProfiles.mapNotNullTo(this) { it.photoUri }
++     restoredMemorialPhotos.mapTo(this) { it.photoUri }
++ }.mapNotNull { Uri.parse(it).path }.toSet()
++
++ listOf(RESTORED_PHOTO_DIRECTORY, MEMORIAL_PHOTO_DIRECTORY).forEach { name -&gt;
++     File(appContext.filesDir, name).listFiles()?.forEach { file -&gt;
++         if (file.absolutePath !in referenced) runCatching { file.delete() }
++     }
++ }</span></code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">H-05</span><h3>사진을 바꾸거나 편집을 취소하면 잘린 사진이 고아로 남습니다</h3></div>
+        <p class="loc"><span>CropActivity.kt:51–74</span> · <span>ReptileEditActivity.kt:44–56, 175–205</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>H-04와 같은 증상이지만 일상 사용에서 훨씬 자주 쌓입니다. 프로필 사진을 세 번 바꾸면 쓰이지 않는 JPEG 세 장이 남습니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>CropActivity</code>는 자를 때마다 새 파일을 만들고, <code>ReptileEditActivity</code>는 <code>photoUri</code>만 새 경로로 교체합니다. 이전 파일을 지우는 코드도, 저장하지 않고 나갔을 때 방금 만든 파일을 되돌리는 코드도 없습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>저장 성공 시 이전 경로를 정리하고, 저장 없이 나가면 이번 세션에서 만든 파일을 지웁니다. 근본적으로는 <b>C-01/H-04와 함께 앱 시작 시 한 번 도는 고아 파일 정리 루틴</b>을 두는 편이 안전합니다.</dd></div>
+        </dl>
+<pre><code><span class="cmt">// 앱 시작 시 1회 (Application 또는 MainActivity.onCreate의 IO 코루틴)</span>
+val referenced = database.reptileDao().all().mapNotNull { it.photoUri } +
+                 database.memorialPhotoDao().all().map { it.photoUri }
+val keep = referenced.mapNotNull { Uri.parse(it).path }.toSet()
+listOf("profile_photos", "memorial_photos").forEach { name -&gt;
+    File(filesDir, name).listFiles()?.forEach { f -&gt;
+        if (f.absolutePath !in keep &amp;&amp;
+            System.currentTimeMillis() - f.lastModified() &gt; 24 * 60 * 60 * 1000L) {
+            runCatching { f.delete() }        <span class="cmt">// 편집 중인 파일 보호를 위해 24시간 유예</span>
+        }
+    }
+}</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">H-06</span><h3>무게 기록이 쌓이면 그래프가 통째로 빈 화면이 됩니다</h3></div>
+        <p class="loc"><span>WeightChartView.kt:52–60</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>무게 기록 화면에서 기간을 "전체"로 두면 어느 순간부터 그래프 영역이 아무것도 그려지지 않습니다. 기록이 적은 개체는 정상이라 재현이 들쭉날쭉합니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd><code>onMeasure</code>가 <code>56dp × 기록 수</code>로 폭을 무한정 늘립니다. 주 1회씩 3년이면 156개 → 약 8,700dp → 3배 밀도 기기에서 26,000px입니다. GPU 최대 텍스처 크기(보통 8,192 또는 16,384px)를 넘으면 하드웨어 가속 캔버스가 렌더링을 포기합니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>폭에 상한을 두고, 넘어가면 포인트 간격을 좁혀 담습니다.</dd></div>
+        </dl>
+<pre><code>override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+<span class="add">+   val maxWidth = 6_000                              // 안전한 텍스처 한계 이하
++   val slot = (56f * density)
++       .coerceAtMost((maxWidth - paddingLeft - paddingRight) / values.size.coerceAtLeast(1).toFloat())
+-   val pointWidth = 56f * density</span>
+    val desiredWidth = (paddingLeft + paddingRight +
+<span class="add">+       slot * values.size.coerceAtLeast(5)).roundToInt()</span>
+    <span class="cmt">/* … */</span>
+}</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">H-07</span><h3>"알 수 없는 출처" 권한을 확인하지 않고 설치 화면을 엽니다</h3></div>
+        <p class="loc"><span>SettingsSection.kt:869–878</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>업데이트를 끝까지 받고 나서 설치 화면이 "이 출처의 앱은 설치할 수 없습니다"로 막힙니다. 사용자는 무엇을 해야 하는지 알 수 없고, 앱은 아무 안내도 하지 않습니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd>Android 8부터 앱별로 <code>REQUEST_INSTALL_PACKAGES</code> 허용을 사용자가 직접 켜야 합니다. 매니페스트에 권한은 선언되어 있지만 <code>canRequestPackageInstalls()</code>로 상태를 확인하지도, 설정 화면으로 안내하지도 않습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>설치 직전에 확인하고, 꺼져 있으면 해당 설정 화면으로 보냅니다.</dd></div>
+        </dl>
+<pre><code>private fun installApk(file: File) {
+<span class="add">+   if (!activity.packageManager.canRequestPackageInstalls()) {
++       MaterialAlertDialogBuilder(activity)
++           .setTitle("설치 권한이 필요합니다")
++           .setMessage("업데이트를 설치하려면 BeardyLog에 '알 수 없는 앱 설치' 권한을 허용해 주세요.")
++           .setNegativeButton("나중에", null)
++           .setPositiveButton("설정 열기") { _, _ -&gt;
++               activity.startActivity(Intent(
++                   Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
++                   Uri.parse("package:${activity.packageName}")
++               ))
++           }
++           .show()
++       return
++   }</span>
+    <span class="cmt">/* … 기존 설치 인텐트 … */</span>
+}</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">H-08</span><h3>MIUI 크래시 방어 코드가 매니페스트에 등록되어 있지 않습니다</h3></div>
+        <p class="loc"><span>_to_delete/BeardylogApplication.kt</span> · <span>AndroidManifest.xml:11–12</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>일부 샤오미(MIUI) 기기에서 Room이 DB 연결을 여는 동안 앱이 이유 없이 종료됩니다.</dd></div>
+          <div class="row"><dt>원인</dt><dd>이 현상을 막으려고 만든 <code>BeardylogApplication</code>이 <code>_to_delete/</code> 폴더에 있고, <code>&lt;application&gt;</code> 태그에 <code>android:name</code>이 없어서 <b>실행 시 전혀 사용되지 않습니다</b>. 주석에 적힌 대로 벤더 ROM 버그라 앱 로직으로는 원인 제거가 안 되므로, 방어 코드가 살아 있어야 합니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>의도적으로 뺀 것이 아니라면 되살립니다. 이 클래스는 <b>M-06(Crashlytics)</b>과 <b>H-05(고아 파일 정리)</b>를 붙일 자연스러운 자리이기도 합니다.</dd></div>
+        </dl>
+<pre><code><span class="cmt">&lt;!-- AndroidManifest.xml --&gt;</span>
+&lt;application
+<span class="add">+   android:name=".BeardylogApplication"</span>
+    android:allowBackup="true"
+    <span class="cmt">…</span>&gt;</code></pre>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══════════════ 보통 ══════════════ -->
+  <section class="sec-med">
+    <div class="sec-head">
+      <h2>보통</h2>
+      <span class="note">지금은 안 터지지만 방어가 비어 있는 자리</span>
+    </div>
+
+    <div class="findings">
+
+      <article>
+        <div class="f-head"><span class="fid">M-01</span><h3>관리 일정 화면이 잘못된 개체 ID를 그대로 받아들입니다</h3></div>
+        <p class="loc"><span>CareScheduleActivity.kt:51</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>ID 전달이 실패하면 <code>reptileId = -1</code>로 일정이 저장되고, 어느 화면에도 나타나지 않는 유령 레코드가 남습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd><code>WeightHistoryActivity</code>·<code>MemorialAlbumActivity</code>가 이미 하고 있는 것처럼 <code>if (reptileId &lt;= 0L) { finish(); return }</code>을 추가합니다. <code>CareSchedule.reptileId</code>는 <code>reptiles</code>에 FK가 걸려 있어 실제로는 삽입이 실패할 가능성이 높지만, 그 실패가 "저장하지 못했습니다"로만 보여 원인 파악이 어렵습니다.</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">M-02</span><h3><code>MIGRATION_1_2</code>가 없습니다</h3></div>
+        <p class="loc"><span>AppDatabase.java:26</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>DB 버전 1로 설치했던 기기는 실행 즉시 종료됩니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>git 이력상 커밋된 최소 버전이 2라 개발 중 빌드에만 해당할 가능성이 큽니다. 그래도 <b>C-04</b>의 <code>fallbackToDestructiveMigrationOnDowngrade()</code>와 별개로, 1→2 마이그레이션을 채우거나 최소한 이 구간만 파괴적 대체를 허용해 두면 확실히 닫힙니다.</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">M-03</span><h3>사진 읽기에 실패해도 빈 파일과 DB 레코드가 생깁니다</h3></div>
+        <p class="loc"><span>MemorialAlbumActivity.kt:76–81</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>앨범에 회색 빈 칸이 생기고, 삭제하기 전까지 사라지지 않습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd><code>contentResolver.openInputStream(uri)</code>가 null이면 <code>output</code> 파일을 지우고 <code>insert</code>를 건너뛰도록 <code>?: run { output.delete(); return@forEachIndexed }</code>를 넣습니다. 복사 후 <code>output.length() == 0L</code> 검사도 함께 두면 확실합니다.</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">M-04</span><h3>화면을 회전하면 작성 중이던 입력이 사라집니다</h3></div>
+        <p class="loc"><span>CareScheduleActivity</span> · <span>ReptileEditActivity</span> · <span>CropActivity</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>일정 화면에서 고른 날짜, 편집 화면의 해칭일·입양일·사진, 크롭 화면의 확대·위치가 모두 초기화됩니다. 정작 "저장하지 않은 변경 사항이 있습니다" 경고는 회전 직후에도 뜹니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd><code>MainActivity</code>만 <code>onSaveInstanceState</code>를 구현하고 나머지 액티비티에는 없습니다. 각 화면의 <code>selectedDate</code>, <code>editingScheduleId</code>, <code>hatchingDate</code>, <code>adoptionDate</code>, <code>photoUri</code>를 <code>onSaveInstanceState</code>에 담고 <code>onCreate</code>에서 복원하세요. 회전을 아예 쓰지 않을 계획이라면 매니페스트에 <code>android:screenOrientation="portrait"</code>를 명시하는 편이 정직합니다 — 지금은 회전이 열려 있는데 대비가 없는 상태입니다.</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">M-05</span><h3>공휴일을 한 번 못 받으면 그 달은 앱을 껐다 켤 때까지 재시도하지 않습니다</h3></div>
+        <p class="loc"><span>CalendarSection.kt:952–953</span> · <span>KoreanHolidayRepository.kt:32–68</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>지하철 등 네트워크가 끊긴 상태에서 달력을 열면 그 달 공휴일이 영영 표시되지 않습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd><code>holidayFetchMonths.add(month)</code>가 시도 자체를 기록하고, <code>fetch()</code>는 <code>runCatching{}.getOrDefault(emptyMap())</code>으로 실패를 삼킵니다. <code>fetch</code>가 빈 결과를 돌려주면 <code>holidayFetchMonths.remove(month)</code>로 되돌려 다음 진입 때 다시 시도하게 하세요.</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">M-06</span><h3>베타 중인데 크래시 리포팅이 없습니다</h3></div>
+        <p class="loc"><span>app/build.gradle.kts:66–68</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>테스터가 겪은 강제 종료를 개발자가 확인할 방법이 전혀 없습니다. 위 항목들이 실제로 몇 명에게 얼마나 자주 터지는지도 알 수 없습니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>Firebase는 이미 연결되어 있고 <code>firebase-analytics</code>만 들어가 있습니다. <code>firebase-crashlytics</code>와 Gradle 플러그인을 추가하면 됩니다. <b>다른 무엇보다 먼저 넣으면, 나머지 항목의 우선순위를 추측이 아니라 데이터로 정할 수 있습니다.</b></dd></div>
+        </dl>
+<pre><code><span class="cmt">// app/build.gradle.kts</span>
+plugins {
+    <span class="cmt">…</span>
+<span class="add">+   id("com.google.firebase.crashlytics")</span>
+}
+dependencies {
+<span class="add">+   implementation("com.google.firebase:firebase-crashlytics")</span>
+}</code></pre>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">M-07</span><h3>스피너 상태를 검증 없이 인덱스로 씁니다</h3></div>
+        <p class="loc"><span>CareScheduleActivity.kt:105, 107, 169</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>어댑터가 비어 있거나 선택이 없는 순간(<code>INVALID_POSITION</code> = -1)에 <code>dayLabels[-1]</code> 또는 <code>selectedItem</code> NPE가 납니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd>현재 배열이 XML 정적 리소스라 실제로 터지진 않지만 방어가 0입니다. <code>selectedItemPosition.coerceAtLeast(0)</code>, <code>selectedItem?.toString() ?: return</code>, <code>dayLabels.getOrNull(index) ?: "?"</code>로 감싸 두세요. <code>repeatDayOfWeek!!</code>도 <code>?: return@forEach</code>로 바꿔 <code>!!</code>를 없앨 수 있습니다 — 이 파일이 코드베이스에서 <code>!!</code>가 남은 유일한 자리입니다.</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <div class="f-head"><span class="fid">M-08</span><h3>큰 숫자를 입력하면 말없이 0이 됩니다</h3></div>
+        <p class="loc"><span>BreedingSection.kt:939</span> · <span>BreedingSection.kt:251</span></p>
+        <dl class="rows">
+          <div class="row"><dt>증상</dt><dd>산란 수에 <code>99999999999</code>처럼 Int 범위를 넘는 값을 넣으면 경고 없이 0으로 저장됩니다. 순서 변경 입력도 같은 방식으로 조용히 원래 값으로 되돌아갑니다.</dd></div>
+          <div class="row"><dt>개선</dt><dd><code>intValueOrZero()</code>가 <code>toIntOrNull() ?: 0</code>이라 파싱 실패와 "0 입력"을 구분하지 못합니다. 입력란에 <code>maxLength</code>를 걸고, 파싱 실패 시 <code>TextInputLayout.error</code>로 알려 주세요.</dd></div>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <p class="closing">
+    전반적으로 코루틴·DB 스레딩·마이그레이션 관리는 잘 잡혀 있습니다. 문제는 거의 전부
+    <strong>사진과 파일을 다루는 경로</strong>(C-01·C-03·C-06·H-04·H-05)와 <strong>앱 바깥과 맞닿는 경로</strong>(C-04·C-05·H-03·H-07)에 몰려 있습니다.
+    사진 쪽은 저장 시점에 한 번 줄이는 것만으로 여러 항목이 동시에 완화되고, 업데이트 쪽은 예외 처리와 권한 확인 두 가지가 대부분을 덮습니다.
+    다만 <strong>M-06을 먼저 넣어야</strong> 나머지 순서를 추측이 아니라 실제 발생 빈도로 정할 수 있습니다.
+  </p>
+
+</div>

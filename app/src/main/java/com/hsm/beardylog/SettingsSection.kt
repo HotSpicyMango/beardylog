@@ -41,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.HttpURLConnection
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -344,6 +345,7 @@ internal class SettingsSection(private val activity: MainActivity) {
             title = "앱 시작 시 마지막 선택한 프로필 선택",
             subtitle = "앱 실행 시 마지막으로 선택했던 개체가 선택됩니다.",
             trailing = SwitchMaterial(context).apply {
+                applyThemeColors()
                 isChecked = activity.isAutoSelectLastProfileEnabled()
                 setOnCheckedChangeListener { button, checked ->
                     button.selectionHaptic()
@@ -614,7 +616,7 @@ internal class SettingsSection(private val activity: MainActivity) {
             is ProfileBackupManager.NoProfilesToBackupException -> error.message.orEmpty()
             is ProfileBackupManager.InvalidBackupException -> error.message.orEmpty()
             is ProfileBackupManager.DriveBackupException -> error.message.orEmpty()
-            is ApiException -> "Google 계정 연결에 실패했습니다 (${error.statusCode})"
+            is ApiException -> driveAuthorizationFailureMessage(error)
             else -> error.message?.takeIf { it.isNotBlank() } ?: "Google Drive 작업에 실패했습니다"
         }
         driveBackupButton?.rejectHaptic()
@@ -622,6 +624,13 @@ internal class SettingsSection(private val activity: MainActivity) {
         finishDriveAction()
         activity.showBriefToast(message)
     }
+
+    private fun driveAuthorizationFailureMessage(error: ApiException): String =
+        if (error.statusCode == GOOGLE_DEVELOPER_ERROR_STATUS_CODE) {
+            "Google Drive 로그인 설정이 현재 앱 서명과 맞지 않습니다 (${error.statusCode})"
+        } else {
+            "Google 계정 연결에 실패했습니다 (${error.statusCode})"
+        }
 
     private fun lastDriveBackupStatus(): String {
         val savedAt = activity.appSettings.lastDriveBackupAt
@@ -642,11 +651,26 @@ internal class SettingsSection(private val activity: MainActivity) {
             title = "앱 시작 시 업데이트 확인",
             subtitle = "새 버전이 있으면 안내합니다",
             trailing = SwitchMaterial(context).apply {
+                applyThemeColors()
                 isChecked = activity.isUpdateCheckEnabled()
                 setOnCheckedChangeListener { button, checked ->
                     button.selectionHaptic()
                     activity.appSettings.checkUpdatesOnStart = checked
                     activity.showBriefToast(if (checked) "자동 업데이트 확인을 켰습니다" else "자동 업데이트 확인을 껐습니다")
+                }
+            }
+        ))
+        addAppInfoDivider()
+        addView(settingRow(
+            title = "베타 업데이트 받기",
+            subtitle = "베타 테스트 버전을 업데이트 대상에 포함합니다",
+            trailing = SwitchMaterial(context).apply {
+                applyThemeColors()
+                isChecked = activity.appSettings.updateChannelIsBeta
+                setOnCheckedChangeListener { button, checked ->
+                    button.selectionHaptic()
+                    activity.appSettings.updateChannelIsBeta = checked
+                    activity.showBriefToast(if (checked) "베타 채널로 전환했습니다" else "안정 채널로 전환했습니다")
                 }
             }
         ))
@@ -777,12 +801,11 @@ internal class SettingsSection(private val activity: MainActivity) {
      *  수동 "지금 업데이트 확인" 버튼이 똑같은 함수를 쓴다 — showNoUpdateToast로 결과 알림 여부만 다르다. */
     fun checkForUpdate(showNoUpdateToast: Boolean = false) {
         activity.lifecycleScope.launch {
+            val includePrereleases = activity.appSettings.updateChannelIsBeta
             val release = runCatching {
-                withContext(Dispatchers.IO) { gitHubUpdateChecker.fetchLatestRelease() }
+                withContext(Dispatchers.IO) { gitHubUpdateChecker.fetchLatestRelease(includePrereleases) }
             }.getOrElse { error ->
-                if (showNoUpdateToast) {
-                    activity.showBriefToast(error.message?.takeIf { it.isNotBlank() } ?: "업데이트 확인에 실패했습니다")
-                }
+                if (showNoUpdateToast) activity.showBriefToast(updateFailureMessage(error))
                 return@launch
             }
             val currentVersion = packageInfo().versionName.orEmpty()
@@ -809,6 +832,13 @@ internal class SettingsSection(private val activity: MainActivity) {
             .setNegativeButton("나중에", null)
             .show()
     }
+
+    private fun updateFailureMessage(error: Throwable): String =
+        if (error is GitHubUpdateChecker.GitHubUpdateException && error.responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+            "업데이트 저장소를 찾을 수 없습니다. GitHub 공개 설정을 확인하세요"
+        } else {
+            error.message?.takeIf { it.isNotBlank() } ?: "업데이트 확인에 실패했습니다"
+        }
 
     private fun startApkDownload(release: GitHubUpdateChecker.ReleaseInfo) {
         val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -864,11 +894,19 @@ internal class SettingsSection(private val activity: MainActivity) {
 
     private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
     private fun resColor(resId: Int): Int = activity.appColor(resId)
+
+    /** SwitchMaterial 기본 색이 테마를 안 따라가서, 켜짐/꺼짐 색을 현재 앱 테마에 맞춰 직접 지정한다. */
+    private fun SwitchMaterial.applyThemeColors() {
+        trackTintList = ContextCompat.getColorStateList(context, R.color.switch_track_tint)
+        thumbTintList = ContextCompat.getColorStateList(context, R.color.switch_thumb_tint)
+    }
+
     private val match: Int get() = ViewGroup.LayoutParams.MATCH_PARENT
     private val wrap: Int get() = ViewGroup.LayoutParams.WRAP_CONTENT
 
     private companion object {
         const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
+        const val GOOGLE_DEVELOPER_ERROR_STATUS_CODE = 10
         const val DISABLED_BUTTON_ALPHA = 0.45f
         const val THEME_TRANSITION_DURATION_MS = 220L
         var pendingThemeTransitionBitmap: Bitmap? = null
