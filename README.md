@@ -1,4 +1,4 @@
-# BeardyLog
+# BeardyLog [베타]
 
 BeardyLog는 도마뱀을 키우는 사람들을 위한 관리 기록 앱입니다.
 
