@@ -97,6 +97,13 @@ internal class CalendarSection(private val activity: MainActivity) {
         calendarDetailEditor = null
     }
 
+    /** 앱을 켜 둔 채 자정을 넘기면 '오늘' 강조와 오늘 버튼이 어제에 머문다. 날짜가 바뀐 뒤 돌아왔을 때만 다시 그린다.
+     *  상세 화면이 열려 있으면 입력 중인 내용이 날아가므로 건드리지 않는다 — 목록으로 돌아갈 때 어차피 새로 그려진다. */
+    fun refreshForNewDay() {
+        if (calendarDetailDate != null) return
+        activity.replaceTopContent(createCalendarContentView())
+    }
+
     /** true를 반환하면 뒤로가기를 이 섹션이 처리했다는 뜻이다. */
     fun handleBackPressed(): Boolean {
         calendarDetailEditor?.let { editor ->
@@ -715,8 +722,9 @@ internal class CalendarSection(private val activity: MainActivity) {
         medicineInput: EditText,
         memoInput: EditText
     ) {
+        // CareScheduleActivity/ReptileEditActivity와 동일하게, 바꾼 게 없으면 묻지 않고 닫는다.
         if (!hasUnsavedCalendarDetailChanges(date, taskChecks, hospitalInput, medicineInput, memoInput)) {
-            showCalendarDetailCloseDialog(date)
+            returnToCalendarFromDetail(date, resetScroll = true)
             return
         }
         val dialog = MaterialAlertDialogBuilder(activity)
@@ -731,18 +739,6 @@ internal class CalendarSection(private val activity: MainActivity) {
                 returnToCalendarFromDetail(date, resetScroll = true)
             }
             .setNeutralButton("취소", null)
-            .show()
-        dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_rounded)
-    }
-
-    private fun showCalendarDetailCloseDialog(date: LocalDate) {
-        val dialog = MaterialAlertDialogBuilder(activity)
-            .setTitle("상세 일정 닫기")
-            .setMessage("캘린더 화면으로 돌아가시겠습니까?")
-            .setPositiveButton("돌아가기") { _, _ ->
-                returnToCalendarFromDetail(date, resetScroll = true)
-            }
-            .setNegativeButton("취소", null)
             .show()
         dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_rounded)
     }
@@ -953,7 +949,11 @@ internal class CalendarSection(private val activity: MainActivity) {
         if (!holidayRepository.isConfigured || !holidayFetchMonths.add(month)) return
         activity.lifecycleScope.launch {
             val fetched = withContext(Dispatchers.IO) { holidayRepository.fetch(month) }
-            if (fetched.isNotEmpty()) {
+            if (fetched.isEmpty()) {
+                // fetch는 실패를 빈 결과로 삼킨다. 표시를 지워두지 않으면 지하철에서 한 번 실패한 달은
+                // 앱을 껐다 켤 때까지 공휴일이 영영 안 나온다.
+                holidayFetchMonths.remove(month)
+            } else {
                 if (activity.currentSection == MainActivity.MainSection.CALENDAR && calendarDetailDate == null && currentCalendarMonth == month) {
                     koreanHolidays = fetched
                     calendarDateCells.forEach { (date, cell) -> updateCalendarDateCellStyle(cell, date) }

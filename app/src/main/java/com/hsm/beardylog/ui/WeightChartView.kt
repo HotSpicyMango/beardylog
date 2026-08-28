@@ -50,9 +50,12 @@ class WeightChartView @JvmOverloads constructor(context: Context, attrs: Attribu
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val pointWidth = 56f * density
-        val desiredWidth = (paddingLeft + paddingRight +
-            pointWidth * values.size.coerceAtLeast(5)).roundToInt()
+        // 폭이 GPU 최대 텍스처 크기를 넘으면 하드웨어 가속 캔버스가 렌더링을 통째로 포기해
+        // 그래프가 빈 화면이 된다. 기록이 많아지면 포인트 간격을 좁혀서 상한 안에 담는다.
+        val slots = values.size.coerceAtLeast(5)
+        val available = (MAX_CHART_WIDTH_PX - paddingLeft - paddingRight).toFloat()
+        val pointWidth = (56f * density).coerceAtMost(available / slots)
+        val desiredWidth = (paddingLeft + paddingRight + pointWidth * slots).roundToInt()
         val measuredWidth = resolveSize(desiredWidth, widthMeasureSpec)
         val measuredHeight = resolveSize((170f * density).roundToInt(), heightMeasureSpec)
         setMeasuredDimension(measuredWidth, measuredHeight)
@@ -148,4 +151,9 @@ class WeightChartView @JvmOverloads constructor(context: Context, attrs: Attribu
     }
 
     private fun formatWeight(value: Float): String = if (value % 1f == 0f) "${value.toInt()}g" else "%.1fg".format(java.util.Locale.US, value)
+
+    private companion object {
+        // 실기기 GL_MAX_TEXTURE_SIZE는 보통 8192 이상이지만, 넉넉히 아래로 잡아둔다.
+        const val MAX_CHART_WIDTH_PX = 6000
+    }
 }

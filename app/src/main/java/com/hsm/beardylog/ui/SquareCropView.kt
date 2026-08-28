@@ -41,43 +41,11 @@ class SquareCropView @JvmOverloads constructor(context: Context, attrs: Attribut
         }
     })
 
-    fun setImage(uri: Uri) {
-        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return
-        // 카메라 원본은 수천 px에 달해 무압축으로 그대로 디코드하면 메모리 스파이크/OOM 위험이 있어,
-        // 크롭 화면에서 실제로 필요한 해상도 정도로만 다운샘플링해서 디코드한다.
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        val sampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, MAX_DECODE_DIMENSION)
-        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sampleSize }) ?: return
-        val orientation = ByteArrayInputStream(bytes).use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }
+    /** 이미 디코드된 비트맵을 붙인다. 메인 스레드에서 호출. */
+    fun setImage(image: Bitmap) {
         bitmap?.recycle()
-        bitmap = applyExifOrientation(decoded, orientation)
+        bitmap = image
         resetImagePosition()
-    }
-
-    private fun calculateInSampleSize(rawWidth: Int, rawHeight: Int, maxDimension: Int): Int {
-        var sampleSize = 1
-        while (rawWidth / (sampleSize * 2) >= maxDimension || rawHeight / (sampleSize * 2) >= maxDimension) {
-            sampleSize *= 2
-        }
-        return sampleSize
-    }
-
-    private fun applyExifOrientation(source: Bitmap, orientation: Int): Bitmap {
-        val matrix = Matrix()
-        when (orientation) {
-            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
-            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(180f)
-            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
-            ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.setRotate(90f); matrix.postScale(-1f, 1f) }
-            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(90f)
-            ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.setRotate(-90f); matrix.postScale(-1f, 1f) }
-            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(-90f)
-            else -> return source
-        }
-        return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true).also {
-            if (it !== source) source.recycle()
-        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -158,9 +126,48 @@ class SquareCropView @JvmOverloads constructor(context: Context, attrs: Attribut
         offsetY = if (scaledHeight <= crop.height()) crop.centerY() - scaledHeight / 2f else offsetY.coerceIn(crop.bottom - scaledHeight, crop.top)
     }
 
-    private companion object {
+    companion object {
         // 크롭 UI가 화면에 보여주는 크기를 고려했을 때 이 이상 해상도는 크롭 품질에 도움이 안 되면서
         // 메모리만 잡아먹으므로, 디코드 단계에서 이 정도로 다운샘플링한다.
-        const val MAX_DECODE_DIMENSION = 1600
+        private const val MAX_DECODE_DIMENSION = 1600
+
+        /** 원본 읽기 + 디코드 + EXIF 회전. 원본이 수천 px라 메인 스레드에서 부르면 안 된다.
+         *  실패(권한 만료/손상/OOM)하면 null. */
+        fun decode(context: Context, uri: Uri): Bitmap? {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            var sampleSize = 1
+            while (bounds.outWidth / (sampleSize * 2) >= MAX_DECODE_DIMENSION ||
+                bounds.outHeight / (sampleSize * 2) >= MAX_DECODE_DIMENSION
+            ) {
+                sampleSize *= 2
+            }
+            val decoded = BitmapFactory.decodeByteArray(
+                bytes, 0, bytes.size,
+                BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            ) ?: return null
+            val orientation = ByteArrayInputStream(bytes).use {
+                ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            }
+            return applyExifOrientation(decoded, orientation)
+        }
+
+        private fun applyExifOrientation(source: Bitmap, orientation: Int): Bitmap {
+            val matrix = Matrix()
+            when (orientation) {
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(180f)
+                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
+                ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.setRotate(90f); matrix.postScale(-1f, 1f) }
+                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(90f)
+                ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.setRotate(-90f); matrix.postScale(-1f, 1f) }
+                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(-90f)
+                else -> return source
+            }
+            return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true).also {
+                if (it !== source) source.recycle()
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
@@ -14,6 +15,7 @@ import com.hsm.beardylog.data.WeightChartPreferences
 import com.hsm.beardylog.databinding.ActivityMainBinding
 import com.hsm.beardylog.viewmodel.ReptileViewModel
 import com.hsm.beardylog.viewmodel.ReptileViewModelFactory
+import java.time.LocalDate
 
 class MainActivity : AppBaseActivity() {
     internal lateinit var binding: ActivityMainBinding
@@ -35,6 +37,7 @@ class MainActivity : AppBaseActivity() {
     internal var currentSection = MainSection.HOME
     private val calendarSection = CalendarSection(this)
     internal var settingsScrollY = 0
+    private var lastResumedDate: LocalDate = LocalDate.now()
     private var isNavigationHapticsReady = false
     internal val driveAuthorizationLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -137,6 +140,8 @@ class MainActivity : AppBaseActivity() {
     override fun onResume() {
         super.onResume()
         if (!::binding.isInitialized) return
+        homeSection.onResume()
+        refreshSectionForNewDay()
         binding.weightPeriodLabel.text = WeightChartPreferences.homePeriod(this).displayName
         selectedReptileId?.let(::loadWeightHistory)
         if (currentSection == MainSection.MEMORIAL && memorialSection.hasOpenDetail()) {
@@ -145,6 +150,24 @@ class MainActivity : AppBaseActivity() {
         if (currentSection == MainSection.BREEDING && breedingSection.hasOpenDetail()) {
             replaceTopContent(breedingSection.createContentView())
         }
+    }
+
+    /** 홈은 homeSection.onResume이 매번 다시 그리지만, 달력과 브리딩은 뷰를 만들 때 읽은 오늘 날짜를
+     *  그대로 들고 있다. 날짜가 실제로 바뀐 경우에만 다시 그려서 불필요한 재생성을 피한다. */
+    private fun refreshSectionForNewDay() {
+        val today = LocalDate.now()
+        if (today == lastResumedDate) return
+        lastResumedDate = today
+        when (currentSection) {
+            MainSection.CALENDAR -> calendarSection.refreshForNewDay()
+            MainSection.BREEDING -> breedingSection.refresh()
+            else -> Unit
+        }
+    }
+
+    override fun onDestroy() {
+        settingsSection.release()
+        super.onDestroy()
     }
 
     internal fun isUpdateCheckEnabled(): Boolean =
@@ -197,6 +220,14 @@ class MainActivity : AppBaseActivity() {
         MainSection.CALENDAR -> R.id.nav_calendar
         MainSection.MEMORIAL -> R.id.nav_memorial
         MainSection.SETTINGS -> R.id.nav_settings
+    }
+
+    /** 같은 화면을 데이터 변경 때문에 다시 그릴 때 쓴다. 새 ScrollView는 항상 맨 위에서 시작하므로
+     *  그대로 교체하면 사용자가 보던 위치를 잃는다. 다른 화면으로 넘어갈 때는 replaceTopContent를 쓸 것. */
+    internal fun replaceTopContentKeepingScroll(content: View) {
+        val scrollY = (currentTopContent as? ScrollView)?.scrollY ?: 0
+        replaceTopContent(content)
+        (content as? ScrollView)?.let { view -> view.post { view.scrollTo(0, scrollY) } }
     }
 
     internal fun replaceTopContent(content: View) {

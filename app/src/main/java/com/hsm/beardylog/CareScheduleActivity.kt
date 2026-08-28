@@ -49,6 +49,12 @@ class CareScheduleActivity : AppBaseActivity() {
         setContentView(binding.root)
         database = AppDatabase.getInstance(applicationContext)
         val reptileId = intent.getLongExtra(EXTRA_REPTILE_ID, -1L)
+        // 다른 화면들과 동일하게, 개체를 특정하지 못하면 들어오지 않는다. 그냥 두면 reptileId=-1로
+        // 저장이 시도되고 FK 위반으로 "저장하지 못했습니다"만 반복돼 원인을 알 수 없다.
+        if (reptileId <= 0L) {
+            finish()
+            return
+        }
         binding.toolbar.setNavigationIcon(R.drawable.ic_back)
         binding.toolbar.navigationIcon?.let { DrawableCompat.setTint(it, appColor(R.color.text_primary)) }
         binding.toolbar.setNavigationOnClickListener { view ->
@@ -60,6 +66,11 @@ class CareScheduleActivity : AppBaseActivity() {
                 requestClose()
             }
         })
+        savedInstanceState?.let { saved ->
+            selectedDate = LocalDate.ofEpochDay(saved.getLong(KEY_SELECTED_DATE, selectedDate.toEpochDay()))
+            editingScheduleId = saved.getLong(KEY_EDITING_ID, -1L).takeIf { it > 0L }
+            if (editingScheduleId != null) binding.saveButton.text = "일정 수정"
+        }
         updateDateButton()
         initialFormState = currentFormState()
         binding.modeGroup.setOnCheckedChangeListener { _, checkedId ->
@@ -86,6 +97,16 @@ class CareScheduleActivity : AppBaseActivity() {
         }
     }
 
+    /** 회전이나 프로세스 종료로 화면이 다시 만들어져도 고른 날짜와 '수정 중'인 일정은 살아 있어야 한다.
+     *  이게 없으면 수정하던 일정이 새 일정으로 저장돼 중복이 생긴다. 입력 필드 자체는 뷰가 알아서 복원한다.
+     *  ponytail: 미저장 경고의 기준점(initialFormState)은 복원 후 현재 상태로 다시 잡는다 —
+     *  회전 직전까지 친 내용은 경고 대상에서 빠지지만, 그 이후 수정은 정상적으로 잡힌다. */
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putLong(KEY_SELECTED_DATE, selectedDate.toEpochDay())
+        outState.putLong(KEY_EDITING_ID, editingScheduleId ?: -1L)
+        super.onSaveInstanceState(outState)
+    }
+
     private fun pickDate() {
         DatePickerDialog(this, { _, year, month, day ->
             selectedDate = LocalDate.of(year, month + 1, day)
@@ -102,9 +123,10 @@ class CareScheduleActivity : AppBaseActivity() {
         val schedule = CareSchedule().apply {
             this.reptileId = reptileId
             scheduledDate = selectedDate.toEpochDay()
-            careType = binding.typeSpinner.selectedItem.toString()
+            careType = binding.typeSpinner.selectedItem?.toString().orEmpty()
             memo = binding.memoInput.text?.toString()?.trim().orEmpty()
-            repeatDayOfWeek = if (repeating) binding.daySpinner.selectedItemPosition + 1 else null
+            // selectedItemPosition은 선택이 없으면 INVALID_POSITION(-1)이라 그대로 쓰면 0요일이 된다.
+            repeatDayOfWeek = if (repeating) binding.daySpinner.selectedItemPosition.coerceAtLeast(0) + 1 else null
         }
         val updateId = editingScheduleId
         binding.saveButton.isEnabled = false
@@ -166,7 +188,7 @@ class CareScheduleActivity : AppBaseActivity() {
                 text = if (key.startsWith("date:")) {
                     LocalDate.ofEpochDay(key.removePrefix("date:").toLong()).format(dateFormatter)
                 } else {
-                    "매주 ${dayLabels[entries.first().first.repeatDayOfWeek!! - 1]}요일"
+                    "매주 ${dayLabels.getOrNull((entries.first().first.repeatDayOfWeek ?: 0) - 1) ?: "?"}요일"
                 }
                 setTextColor(context.appColor(R.color.text_primary))
                 textSize = 17f
@@ -319,5 +341,9 @@ class CareScheduleActivity : AppBaseActivity() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
-    companion object { const val EXTRA_REPTILE_ID = "reptile_id" }
+    companion object {
+        const val EXTRA_REPTILE_ID = "reptile_id"
+        private const val KEY_SELECTED_DATE = "selected_date"
+        private const val KEY_EDITING_ID = "editing_schedule_id"
+    }
 }

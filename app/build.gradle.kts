@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 val localProperties = Properties().apply {
@@ -29,9 +30,9 @@ android {
         applicationId = "com.hsm.beardylog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 11
-        versionName = "0.1.0"
-//      8/26
+        versionCode = 13
+        versionName = "0.1.1"
+//      8/28
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KOREA_HOLIDAY_API_KEY", "\"${localProperties.getProperty("KOREA_HOLIDAY_API_KEY", "")}\"")
@@ -75,5 +76,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     implementation(platform("com.google.firebase:firebase-bom:34.17.0"))
     implementation("com.google.firebase:firebase-analytics")
+    // 베타 테스터가 겪은 크래시를 볼 방법이 없으면 무엇을 먼저 고쳐야 하는지 추측만 하게 된다.
+    implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.github.bumptech.glide:glide:4.16.0")
 }

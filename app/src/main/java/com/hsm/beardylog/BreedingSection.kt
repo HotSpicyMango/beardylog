@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.text.InputFilter
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
@@ -74,7 +75,7 @@ internal class BreedingSection(private val activity: MainActivity) {
 
     fun refresh() {
         if (activity.currentSection != MainActivity.MainSection.BREEDING) return
-        activity.replaceTopContent(createContentView())
+        activity.replaceTopContentKeepingScroll(createContentView())
     }
 
     fun createContentView(): View {
@@ -213,7 +214,7 @@ internal class BreedingSection(private val activity: MainActivity) {
                 setPadding(dp(8), dp(2), 0, dp(2))
                 setOnClickListener { view ->
                     view.clickHaptic()
-                    showAddClutchDialog(pair, pairClutches.size + 1)
+                    showAddClutchDialog(pair, nextClutchNumber(pairClutches))
                 }
             })
         }
@@ -230,6 +231,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         setSingleLine(true)
         imeOptions = EditorInfo.IME_ACTION_DONE
         inputType = InputType.TYPE_CLASS_NUMBER
+        filters = arrayOf(InputFilter.LengthFilter(MAX_COUNT_INPUT_LENGTH))
         setTextColor(resColor(R.color.text_primary))
         backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
         setPadding(dp(6), dp(4), dp(6), dp(4))
@@ -371,7 +373,7 @@ internal class BreedingSection(private val activity: MainActivity) {
                     insetBottom = 0
                     setOnClickListener { view ->
                         view.clickHaptic()
-                        showAddClutchDialog(pair, pairClutches.size + 1)
+                        showAddClutchDialog(pair, nextClutchNumber(pairClutches))
                     }
                 })
             }
@@ -913,6 +915,8 @@ internal class BreedingSection(private val activity: MainActivity) {
         this.hint = hint
         textSize = 14f
         inputType = InputType.TYPE_CLASS_NUMBER
+        // Int 범위를 넘는 값은 toIntOrNull이 null이 되어 조용히 0으로 저장된다. 아예 못 넣게 막는다.
+        filters = arrayOf(InputFilter.LengthFilter(MAX_COUNT_INPUT_LENGTH))
         setTextColor(resColor(R.color.text_primary))
         setHintTextColor(resColor(R.color.text_secondary))
         backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
@@ -922,6 +926,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         this.hint = hint
         textSize = 14f
         inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
+        filters = arrayOf(InputFilter.LengthFilter(MAX_DECIMAL_INPUT_LENGTH))
         setTextColor(resColor(R.color.text_primary))
         setHintTextColor(resColor(R.color.text_secondary))
         backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
@@ -940,6 +945,13 @@ internal class BreedingSection(private val activity: MainActivity) {
     private fun EditText.doubleValueOrNull(): Double? = text?.toString()?.trim()?.replace(',', '.')?.toDoubleOrNull()
 
     // ---- 데이터 조회/표시 헬퍼 ----
+
+    /** 회차 번호는 가장 큰 번호 다음이다. 개수를 쓰면 2차를 지운 뒤 추가할 때
+     *  이미 있는 3차와 번호가 겹쳐 두 기록을 구분할 수 없게 된다.
+     *  '동시에 몇 개까지'(MAX_CLUTCHES)는 이것과 별개의 축이라 개수로 따로 센다 —
+     *  그래서 지웠다 다시 넣으면 번호는 6차, 7차로 계속 올라간다(실제 몇 번째 산란인지 그대로). */
+    private fun nextClutchNumber(pairClutches: List<Clutch>): Int =
+        (pairClutches.maxOfOrNull { it.clutchNumber } ?: 0) + 1
 
     private fun clutchesFor(pairId: Long): List<Clutch> = clutches.filter { it.pairId == pairId }
     private fun hatchlingsFor(clutchId: Long): List<Hatchling> = hatchlings.filter { it.clutchId == clutchId }
@@ -990,6 +1002,10 @@ internal class BreedingSection(private val activity: MainActivity) {
     }
 
     companion object {
+        // Int.MAX_VALUE가 10자리라 9자리까지만 받으면 오버플로가 원천적으로 안 생긴다.
+        private const val MAX_COUNT_INPUT_LENGTH = 9
+        private const val MAX_DECIMAL_INPUT_LENGTH = 6
+
         private const val MAX_CLUTCHES = 5
     }
 }

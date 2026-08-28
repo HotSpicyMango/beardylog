@@ -2,7 +2,6 @@ package com.hsm.beardylog.ui
 
 import android.content.Context
 import android.graphics.Matrix
-import android.net.Uri
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -87,13 +86,20 @@ class ZoomableImageView @JvmOverloads constructor(
         }
     }
 
+    /** setImageDrawable은 ImageView 생성자에서도 불릴 수 있는 자리라(레이아웃 XML의 android:src 등),
+     *  이 클래스의 필드 초기화가 끝나기 전에 resetZoom이 실행되는 걸 막는다. */
+    private var readyForZoom: Boolean = false
+
     init {
         scaleType = ScaleType.MATRIX
+        readyForZoom = true
     }
 
-    override fun setImageURI(uri: Uri?) {
-        super.setImageURI(uri)
-        resetZoom()
+    // Glide는 setImageURI가 아니라 setImageDrawable로 그림을 넣는다. 모든 설정 경로가
+    // 여기로 모이므로(setImageURI/setImageResource도 내부적으로 이걸 부른다) 줌 초기화를 여기에 건다.
+    override fun setImageDrawable(drawable: android.graphics.drawable.Drawable?) {
+        super.setImageDrawable(drawable)
+        if (readyForZoom) resetZoom()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

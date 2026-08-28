@@ -25,6 +25,12 @@ public abstract class AppDatabase extends RoomDatabase {
         if (instance == null) synchronized (AppDatabase.class) {
             if (instance == null) instance = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, "beardylog.db")
                     .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    // 구버전 APK를 사이드로드하면 저장된 DB 버전이 코드보다 높아 Room이 예외를 던지고
+                    // 앱이 영영 켜지지 않는다. 강등은 데이터를 살릴 방법이 없으므로 초기화로 떨어뜨린다.
+                    .fallbackToDestructiveMigrationOnDowngrade(true)
+                    // 버전 1은 정식 배포 전 개발 빌드에만 있었고 스키마 기록이 남아 있지 않다.
+                    // 추측으로 마이그레이션을 쓰면 오히려 데이터를 망가뜨리므로 이 구간만 초기화를 허용한다.
+                    .fallbackToDestructiveMigrationFrom(true, 1)
                     .build();
         }
         return instance;

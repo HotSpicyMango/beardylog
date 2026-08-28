@@ -258,8 +258,7 @@ internal class HomeSection(private val activity: MainActivity) {
     // ---- 내부 구현 ----
 
     private fun observeCareData() {
-        val weekStart = LocalDate.now().with(DayOfWeek.MONDAY).toEpochDay()
-        activity.database.careScheduleDao().observeBetween(weekStart, weekStart + 6).observe(activity) {
+        activity.database.careScheduleDao().observeAll().observe(activity) {
             schedules = it
             renderDashboard()
         }
@@ -267,6 +266,12 @@ internal class HomeSection(private val activity: MainActivity) {
             careLogs = it
             renderDashboard()
         }
+    }
+
+    /** 앱이 백그라운드에서 며칠 살아 있어도 홈이 오늘 기준으로 다시 그려지도록, 돌아올 때마다 갱신한다. */
+    internal fun onResume() {
+        activity.binding.currentDate.text = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+        renderDashboard()
     }
 
     private fun setupActions() {

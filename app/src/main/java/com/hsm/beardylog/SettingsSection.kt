@@ -12,6 +12,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -32,6 +33,7 @@ import com.google.android.gms.common.api.Scope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.bumptech.glide.Glide
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hsm.beardylog.data.GitHubUpdateChecker
 import com.hsm.beardylog.data.ProfileBackupManager
@@ -64,13 +66,37 @@ internal class SettingsSection(private val activity: MainActivity) {
     private val gitHubUpdateChecker = GitHubUpdateChecker()
     private var pendingApkDownloadId: Long? = null
     private var pendingApkFile: File? = null
+    private var apkReceiverRegistered = false
+    /** 복원 확인 다이얼로그가 떠 있는 동안 백업 임시 파일과 ZipFile 핸들을 들고 있는 미리보기.
+     *  다이얼로그로 결론이 나면 그 자리에서 닫지만, 화면이 죽어 다이얼로그가 사라지는 경로는
+     *  어느 콜백도 타지 않으므로 여기에 붙잡아 두고 release에서 정리한다. */
+    private var pendingRestorePreview: ProfileBackupManager.RestorePreview? = null
     private val apkDownloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val completedId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
             if (completedId == -1L || completedId != pendingApkDownloadId) return
-            runCatching { activity.unregisterReceiver(this) }
+            unregisterApkReceiver()
             handleApkDownloadComplete(completedId)
         }
+    }
+
+    private fun unregisterApkReceiver() {
+        if (!apkReceiverRegistered) return
+        apkReceiverRegistered = false
+        runCatching { activity.unregisterReceiver(apkDownloadReceiver) }
+    }
+
+    /** MainActivity.onDestroy에서 호출. 다운로드가 끝나기 전에 화면이 죽으면 해제할 곳이 여기뿐이라
+     *  없으면 수신기가 액티비티를 붙잡은 채 누수된다. 다운로드 자체는 계속되고, 완료 알림을
+     *  탭하면 설치로 이어지므로 여기서 취소하지는 않는다. */
+    fun release() {
+        unregisterApkReceiver()
+        closePendingRestorePreview()
+    }
+
+    private fun closePendingRestorePreview() {
+        pendingRestorePreview?.close()
+        pendingRestorePreview = null
     }
 
     private enum class DriveAction {
@@ -540,6 +566,7 @@ internal class SettingsSection(private val activity: MainActivity) {
     }
 
     private fun showRestoreConfirmation(preview: ProfileBackupManager.RestorePreview) {
+        pendingRestorePreview = preview
         MaterialAlertDialogBuilder(activity)
             .setTitle("Google Drive 백업 복원")
             .setMessage(
@@ -556,7 +583,9 @@ internal class SettingsSection(private val activity: MainActivity) {
             .show()
     }
 
+    /** 백업 파일은 임시 파일로 받아 두고 사진을 복원 시점에 꺼내 쓰므로, 취소했으면 여기서 정리해야 한다. */
     private fun cancelRestorePreview() {
+        closePendingRestorePreview()
         pendingDriveAction = null
         setDriveActionInProgress(false)
         driveBackupStatusText?.text = "복원을 취소했습니다"
@@ -567,7 +596,15 @@ internal class SettingsSection(private val activity: MainActivity) {
         driveBackupStatusText?.text = "프로필 데이터를 복원하는 중입니다…"
         activity.lifecycleScope.launch {
             runCatching {
-                withContext(Dispatchers.IO) { profileBackupManager.restore(preview) }
+                withContext(Dispatchers.IO) {
+                    profileBackupManager.restore(preview).also {
+                        // 복원은 모든 사진 경로를 새 파일명으로 갈아치우므로 기존 썸네일 캐시는 전부 무효다.
+                        // 그대로 두면 무효한 캐시가 Glide 상한(기본 250MB)까지 남는다.
+                        runCatching { Glide.get(activity).clearDiskCache() }
+                    }
+                }
+            }.also {
+                closePendingRestorePreview()
             }.onSuccess { result ->
                 activity.selectedReptileId = null
                 activity.appSettings.lastSelectedProfileId = null
@@ -840,23 +877,40 @@ internal class SettingsSection(private val activity: MainActivity) {
             error.message?.takeIf { it.isNotBlank() } ?: "업데이트 확인에 실패했습니다"
         }
 
+    /** DownloadManager를 사용자가 비활성화했거나 외장 저장소가 없으면 enqueue가 예외를 던진다.
+     *  그 경우 브라우저로 릴리즈 APK를 직접 받게 넘긴다. */
     private fun startApkDownload(release: GitHubUpdateChecker.ReleaseInfo) {
-        val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val request = DownloadManager.Request(Uri.parse(release.downloadUrl))
-            .setTitle("BeardyLog 업데이트")
-            .setDescription("${release.versionName} 다운로드 중")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalFilesDir(activity, null, release.assetName)
-            .setMimeType("application/vnd.android.package-archive")
-        pendingApkFile = File(activity.getExternalFilesDir(null), release.assetName)
-        pendingApkDownloadId = downloadManager.enqueue(request)
-        ContextCompat.registerReceiver(
-            activity,
-            apkDownloadReceiver,
-            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_EXPORTED
-        )
-        activity.showBriefToast("업데이트 다운로드를 시작합니다")
+        runCatching {
+            val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val request = DownloadManager.Request(Uri.parse(release.downloadUrl))
+                .setTitle("BeardyLog 업데이트")
+                .setDescription("${release.versionName} 다운로드 중")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalFilesDir(activity, null, release.assetName)
+                .setMimeType("application/vnd.android.package-archive")
+            val target = File(requireNotNull(activity.getExternalFilesDir(null)), release.assetName)
+            pendingApkDownloadId = downloadManager.enqueue(request)
+            pendingApkFile = target
+            if (!apkReceiverRegistered) {
+                ContextCompat.registerReceiver(
+                    activity,
+                    apkDownloadReceiver,
+                    IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                    ContextCompat.RECEIVER_EXPORTED
+                )
+                apkReceiverRegistered = true
+            }
+        }.onSuccess {
+            activity.showBriefToast("업데이트 다운로드를 시작합니다")
+        }.onFailure {
+            pendingApkDownloadId = null
+            pendingApkFile = null
+            runCatching {
+                activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.downloadUrl)))
+            }.onFailure {
+                activity.showBriefToast("다운로드를 시작하지 못했습니다")
+            }
+        }
     }
 
     private fun handleApkDownloadComplete(downloadId: Long) {
@@ -880,6 +934,26 @@ internal class SettingsSection(private val activity: MainActivity) {
     }
 
     private fun installApk(file: File) {
+        // Android 8부터 앱마다 '알 수 없는 앱 설치'를 사용자가 켜줘야 한다. 확인 없이 설치 화면을
+        // 던지면 아무 설명 없이 막히기만 하므로, 꺼져 있으면 해당 설정으로 안내한다.
+        if (!activity.packageManager.canRequestPackageInstalls()) {
+            MaterialAlertDialogBuilder(activity)
+                .setTitle("설치 권한이 필요합니다")
+                .setMessage("업데이트를 설치하려면 BeardyLog에 '알 수 없는 앱 설치'를 허용해 주세요.")
+                .setNegativeButton("나중에", null)
+                .setPositiveButton("설정 열기") { _, _ ->
+                    runCatching {
+                        activity.startActivity(
+                            Intent(
+                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                Uri.parse("package:${activity.packageName}")
+                            )
+                        )
+                    }.onFailure { activity.showBriefToast("설정 화면을 열지 못했습니다") }
+                }
+                .show()
+            return
+        }
         val contentUri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
         val installIntent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(contentUri, "application/vnd.android.package-archive")

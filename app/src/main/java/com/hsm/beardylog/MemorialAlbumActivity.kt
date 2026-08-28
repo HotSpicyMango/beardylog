@@ -21,6 +21,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hsm.beardylog.data.AppDatabase
 import com.hsm.beardylog.data.MemorialPhoto
+import com.hsm.beardylog.data.PhotoScaler
+import com.hsm.beardylog.data.PhotoStore
 import com.hsm.beardylog.databinding.ActivityMemorialAlbumBinding
 import com.hsm.beardylog.ui.ZoomableImageView
 import kotlinx.coroutines.Dispatchers
@@ -70,12 +72,13 @@ class MemorialAlbumActivity : AppBaseActivity() {
         lifecycleScope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    val photoDirectory = File(filesDir, "memorial_photos").apply { mkdirs() }
+                    val photoDirectory = File(filesDir, PhotoStore.MEMORIAL_DIRECTORY).apply { mkdirs() }
                     uris.forEachIndexed { index, uri ->
+                        val source = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                            ?: return@forEachIndexed
+                        val scaled = PhotoScaler.scaledJpeg(source) ?: return@forEachIndexed
                         val output = File(photoDirectory, "memorial_${reptileId}_${System.currentTimeMillis()}_$index.jpg")
-                        contentResolver.openInputStream(uri)?.use { input ->
-                            output.outputStream().use { out -> input.copyTo(out) }
-                        }
+                        output.writeBytes(scaled)
                         database.memorialPhotoDao().insert(
                             MemorialPhoto(0, reptileId, Uri.fromFile(output).toString(), System.currentTimeMillis())
                         )
@@ -218,7 +221,12 @@ class MemorialAlbumActivity : AppBaseActivity() {
                 override fun onDismissProgress(dy: Float) = notifyDismissProgress(dy)
                 override fun onDismissRelease(dy: Float, velocityY: Float) = notifyDismissRelease(dy, velocityY)
             }
-            holder.imageView.setImageURI(Uri.parse(photo.photoUri))
+            // setImageURI는 메인 스레드에서 원본을 통째로 디코딩해 OOM을 낸다. 목록과 동일하게 Glide에 맡긴다.
+            Glide.with(holder.imageView)
+                .load(Uri.parse(photo.photoUri))
+                .override(PhotoScaler.MAX_DIMENSION, PhotoScaler.MAX_DIMENSION)
+                .fitCenter()
+                .into(holder.imageView)
         }
 
         override fun getItemCount() = photos.size
@@ -231,11 +239,16 @@ class MemorialAlbumActivity : AppBaseActivity() {
             .setNegativeButton("취소", null)
             .setPositiveButton("삭제") { _, _ ->
                 lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        database.memorialPhotoDao().deleteById(photo.id)
-                        runCatching { Uri.parse(photo.photoUri).path?.let { File(it).delete() } }
+                    runCatching {
+                        withContext(Dispatchers.IO) {
+                            database.memorialPhotoDao().deleteById(photo.id)
+                            runCatching { Uri.parse(photo.photoUri).path?.let { File(it).delete() } }
+                        }
+                    }.onSuccess {
+                        onDeleted()
+                    }.onFailure {
+                        showBriefToast("사진을 삭제하지 못했습니다")
                     }
-                    onDeleted()
                 }
             }.show()
     }

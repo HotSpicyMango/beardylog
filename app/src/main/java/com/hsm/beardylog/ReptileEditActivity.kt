@@ -29,6 +29,8 @@ class ReptileEditActivity : AppBaseActivity() {
     private var adoptionDate: LocalDate? = null
     private var photoUri: Uri? = null
     private var initialFormState: FormState? = null
+    /** 화면이 다시 만들어진 경우, DB에서 다시 읽은 값으로 사용자가 고르던 날짜·사진을 덮어쓰면 안 된다. */
+    private var restoredFromState = false
     private val genderOptions: List<String>
         get() = resources.getStringArray(R.array.gender_types).toList()
     private val formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일")
@@ -48,12 +50,7 @@ class ReptileEditActivity : AppBaseActivity() {
         if (result.resultCode == RESULT_OK) {
             result.data?.getStringExtra(CropActivity.EXTRA_RESULT_URI)?.let { value ->
                 photoUri = Uri.parse(value)
-                com.bumptech.glide.Glide.with(this)
-                    .load(photoUri)
-                    .override(dp(112), dp(112))
-                    .centerCrop()
-                    .into(binding.photoPreview)
-                binding.photoPreview.alpha = 1f
+                showPhotoPreview()
             }
         }
     }
@@ -92,6 +89,14 @@ class ReptileEditActivity : AppBaseActivity() {
             view.clickHaptic()
             save()
         }
+        savedInstanceState?.let { saved ->
+            restoredFromState = true
+            hatchingDate = saved.getLong(KEY_HATCHING_DATE, Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }?.let(LocalDate::ofEpochDay)
+            adoptionDate = saved.getLong(KEY_ADOPTION_DATE, Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }?.let(LocalDate::ofEpochDay)
+            photoUri = saved.getString(KEY_PHOTO_URI)?.let(Uri::parse)
+            updateDateLabels()
+            showPhotoPreview()
+        }
         intent.getLongExtra(EXTRA_ID, -1L).takeIf { it > 0 }?.let { id ->
             viewModel.observeById(id).observe(this) { reptile -> reptile?.let(::populate) }
         } ?: run {
@@ -104,6 +109,11 @@ class ReptileEditActivity : AppBaseActivity() {
         if (editing != null) return
         editing = reptile
         binding.toolbar.title = "개체 수정"
+        // 복원된 화면이면 폼에는 사용자가 작업하던 값이 이미 들어 있다. editing만 채우고 빠진다.
+        if (restoredFromState) {
+            initialFormState = currentFormState()
+            return
+        }
         binding.nameInput.setText(reptile.name)
         binding.speciesInput.setText(reptile.species)
         binding.morphInput.setText(reptile.morph)
@@ -117,12 +127,27 @@ class ReptileEditActivity : AppBaseActivity() {
             hatchingDate = LocalDate.ofEpochDay(reptile.referenceDate)
         }
         photoUri = reptile.photoUri?.let(Uri::parse)
-        photoUri?.let {
-            com.bumptech.glide.Glide.with(this).load(it).override(dp(112), dp(112)).centerCrop().into(binding.photoPreview)
-            binding.photoPreview.alpha = 1f
-        }
+        showPhotoPreview()
         updateDateLabels()
         initialFormState = currentFormState()
+    }
+
+    private fun showPhotoPreview() {
+        val uri = photoUri ?: return
+        com.bumptech.glide.Glide.with(this)
+            .load(uri)
+            .override(dp(112), dp(112))
+            .centerCrop()
+            .into(binding.photoPreview)
+        binding.photoPreview.alpha = 1f
+    }
+
+    /** 이름/종/모프 같은 입력 필드는 뷰가 알아서 복원하지만, 날짜와 사진은 이 화면이 들고 있어서 직접 저장한다. */
+    override fun onSaveInstanceState(outState: Bundle) {
+        hatchingDate?.let { outState.putLong(KEY_HATCHING_DATE, it.toEpochDay()) }
+        adoptionDate?.let { outState.putLong(KEY_ADOPTION_DATE, it.toEpochDay()) }
+        photoUri?.let { outState.putString(KEY_PHOTO_URI, it.toString()) }
+        super.onSaveInstanceState(outState)
     }
 
     private fun showDatePicker(isHatching: Boolean) {
@@ -187,6 +212,10 @@ class ReptileEditActivity : AppBaseActivity() {
         val reptile = Reptile(editing?.id ?: 0, name, binding.speciesInput.text.toString().trim(), binding.morphInput.text.toString().trim(), gender, primaryDate.toEpochDay(), primaryType, photoUri?.toString(), editing?.createdAt ?: System.currentTimeMillis()).apply {
             this.hatchingDate = this@ReptileEditActivity.hatchingDate?.toEpochDay()
             this.adoptionDate = this@ReptileEditActivity.adoptionDate?.toEpochDay()
+            // @Update는 행 전체를 덮어쓴다. 여기서 안 옮기면 추모 프로필을 수정하는 순간
+            // 추억공간에서 사라지고 남긴 글도 지워진다.
+            this.deathDate = editing?.deathDate
+            this.memorialNote = editing?.memorialNote
         }
         binding.saveButton.isEnabled = false
         lifecycleScope.launch {
@@ -211,5 +240,10 @@ class ReptileEditActivity : AppBaseActivity() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
-    companion object { const val EXTRA_ID = "reptile_id" }
+    companion object {
+        const val EXTRA_ID = "reptile_id"
+        private const val KEY_HATCHING_DATE = "hatching_date"
+        private const val KEY_ADOPTION_DATE = "adoption_date"
+        private const val KEY_PHOTO_URI = "photo_uri"
+    }
 }

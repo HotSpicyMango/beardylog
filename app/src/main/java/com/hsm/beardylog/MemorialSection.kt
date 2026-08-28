@@ -45,7 +45,7 @@ internal class MemorialSection(private val activity: MainActivity) {
 
     fun refresh() {
         if (activity.currentSection != MainActivity.MainSection.MEMORIAL) return
-        activity.replaceTopContent(createContentView())
+        activity.replaceTopContentKeepingScroll(createContentView())
     }
 
     fun createContentView(): View {

@@ -5,12 +5,16 @@ import android.net.Uri
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 
 class ProfileBackupManager(
     context: Context,
@@ -26,60 +30,135 @@ class ProfileBackupManager(
         val skippedPhotoCount: Int
     )
 
+    /** 사진은 [archive] 안에 남아 있고 복원 시점에 한 장씩 꺼내 쓴다. 그래서 미리보기와 복원 사이
+     *  기다리는 동안에도 메모리에는 DB 레코드만 있다. 다 쓰면 반드시 [close]로 임시 파일을 정리할 것. */
     class RestorePreview internal constructor(
         val createdAt: Long,
         val profileCount: Int,
         val photoCount: Int,
         val calendarDatesCount: Int,
         val breedingPairCount: Int,
-        internal val snapshot: BackupSnapshot
-    )
+        internal val snapshot: BackupSnapshot,
+        private val archive: ZipFile?,
+        private val downloaded: File?
+    ) {
+        /** 복원했든 취소했든 호출해야 한다. 두 번 불러도 안전. */
+        fun close() {
+            runCatching { archive?.close() }
+            downloaded?.delete()
+        }
+    }
 
     /** 새로 백업하면 기존 백업 파일이 지워지므로(단일 슬롯), 업로드 전에 미리 경고할 때 쓴다. */
     fun hasExistingBackup(accessToken: String): Boolean = listBackupFiles(accessToken).isNotEmpty()
 
     fun upload(accessToken: String): BackupResult {
-        val snapshot = captureSnapshot()
-        if (snapshot.profiles.isEmpty()) throw NoProfilesToBackupException()
-        val body = createSnapshotJson(snapshot).toByteArray(StandardCharsets.UTF_8)
-        val previousFiles = listBackupFiles(accessToken)
-        createBackupFile(accessToken, body)
-        previousFiles.forEach { remote ->
-            runCatching { deleteFile(accessToken, remote.id) }
+        val archive = File.createTempFile("backup", ".zip", appContext.cacheDir)
+        try {
+            val result = writeArchive(archive)
+            val previousFiles = listBackupFiles(accessToken)
+            uploadArchive(accessToken, archive)
+            previousFiles.forEach { remote ->
+                runCatching { deleteFile(accessToken, remote.id) }
+            }
+            return result
+        } finally {
+            archive.delete()
         }
-        return snapshot.result()
     }
 
     fun downloadLatest(accessToken: String): RestorePreview {
         val remote = listBackupFiles(accessToken).firstOrNull()
             ?: throw NoBackupFoundException()
-        val bytes = request(
-            url = "https://www.googleapis.com/drive/v3/files/${remote.id}?alt=media",
-            method = "GET",
-            accessToken = accessToken
-        )
-        return previewSnapshot(String(bytes, StandardCharsets.UTF_8))
+        val downloaded = File.createTempFile("restore", ".tmp", appContext.cacheDir)
+        try {
+            downloadTo(
+                url = "https://www.googleapis.com/drive/v3/files/${remote.id}?alt=media",
+                accessToken = accessToken,
+                target = downloaded
+            )
+            return previewArchive(downloaded, deleteOnClose = true)
+        } catch (error: Throwable) {
+            downloaded.delete()
+            throw error
+        }
     }
 
-    internal fun createSnapshotJson(snapshot: BackupSnapshot = captureSnapshot()): String =
-        snapshot.toJson().toString()
-
-    internal fun previewSnapshot(json: String): RestorePreview {
-        val snapshot = try {
-            parseSnapshot(json)
-        } catch (error: InvalidBackupException) {
-            throw error
-        } catch (_: Throwable) {
-            throw InvalidBackupException("백업 데이터가 손상되었습니다")
+    /** 백업 한 벌을 ZIP으로 쓴다. manifest.json에는 DB 레코드만 담고 사진은 별도 엔트리로
+     *  한 장씩 흘려보내므로, 사진이 몇 장이든 메모리에 올라오는 건 한 장뿐이다. */
+    internal fun writeArchive(target: File): BackupResult {
+        val snapshot = captureSnapshot()
+        if (snapshot.profiles.isEmpty()) throw NoProfilesToBackupException()
+        var photoCount = 0
+        var skippedPhotoCount = 0
+        ZipOutputStream(target.outputStream().buffered()).use { zip ->
+            zip.putNextEntry(ZipEntry(MANIFEST_ENTRY))
+            zip.write(snapshot.toJson().toString().toByteArray(StandardCharsets.UTF_8))
+            zip.closeEntry()
+            // 사진은 이미 JPEG/PNG라 다시 압축해봐야 거의 안 줄고 시간만 쓴다.
+            zip.setLevel(Deflater.NO_COMPRESSION)
+            snapshot.profiles.forEach { profile ->
+                val uri = profile.entity.photoUri ?: return@forEach
+                if (copyPhotoInto(zip, profilePhotoEntry(profile.entity.id, uri), uri)) photoCount++
+                else skippedPhotoCount++
+            }
+            snapshot.memorialPhotos.forEach { photo ->
+                val uri = photo.sourceUri ?: return@forEach
+                if (copyPhotoInto(zip, memorialPhotoEntry(photo.id, uri), uri)) photoCount++
+                else skippedPhotoCount++
+            }
         }
-        return RestorePreview(
+        return BackupResult(
             createdAt = snapshot.createdAt,
             profileCount = snapshot.profiles.size,
-            photoCount = snapshot.profiles.count { it.photo != null } + snapshot.memorialPhotos.size,
-            calendarDatesCount = snapshot.calendarDatesCount(),
-            breedingPairCount = snapshot.breedingPairs.size,
-            snapshot = snapshot
+            photoCount = photoCount,
+            skippedPhotoCount = skippedPhotoCount
         )
+    }
+
+    /** ZIP 백업이면 manifest를 읽고, 예전 v1 JSON 백업이면 그대로 파싱한다(사진은 Base64 인라인).
+     *  구버전으로 백업해 둔 사용자가 복원하지 못하면 그대로 데이터 유실이라 두 형식을 모두 받는다. */
+    internal fun previewArchive(file: File, deleteOnClose: Boolean = false): RestorePreview {
+        val archive = runCatching { ZipFile(file) }.getOrNull()
+        try {
+            val json = if (archive != null) {
+                val manifest = archive.getEntry(MANIFEST_ENTRY)
+                    ?: throw InvalidBackupException("백업 파일에 목록이 없습니다")
+                archive.getInputStream(manifest).use { it.readBytes() }.toString(StandardCharsets.UTF_8)
+            } else {
+                file.readText(StandardCharsets.UTF_8)
+            }
+            val snapshot = try {
+                parseSnapshot(json, archive)
+            } catch (error: InvalidBackupException) {
+                throw error
+            } catch (_: Throwable) {
+                throw InvalidBackupException("백업 데이터가 손상되었습니다")
+            }
+            return RestorePreview(
+                createdAt = snapshot.createdAt,
+                profileCount = snapshot.profiles.size,
+                photoCount = snapshot.profiles.count { it.photo != null } + snapshot.memorialPhotos.count { it.photo != null },
+                calendarDatesCount = snapshot.calendarDatesCount(),
+                breedingPairCount = snapshot.breedingPairs.size,
+                snapshot = snapshot,
+                archive = archive,
+                downloaded = file.takeIf { deleteOnClose }
+            )
+        } catch (error: Throwable) {
+            runCatching { archive?.close() }
+            throw error
+        }
+    }
+
+    private fun copyPhotoInto(zip: ZipOutputStream, entryName: String, uriValue: String): Boolean {
+        val bytes = runCatching {
+            appContext.contentResolver.openInputStream(Uri.parse(uriValue))?.use { it.readBytes() }
+        }.getOrNull()?.takeIf { it.isNotEmpty() } ?: return false
+        zip.putNextEntry(ZipEntry(entryName))
+        zip.write(bytes)
+        zip.closeEntry()
+        return true
     }
 
     fun restore(preview: RestorePreview): BackupResult {
@@ -87,15 +166,10 @@ class ProfileBackupManager(
         val restoredProfiles = preview.snapshot.profiles.map { profile ->
             val source = profile.entity
             val restoredPhotoUri = profile.photo?.let { photo ->
-                val directory = File(appContext.filesDir, RESTORED_PHOTO_DIRECTORY).apply { mkdirs() }
+                val directory = File(appContext.filesDir, PhotoStore.PROFILE_DIRECTORY).apply { mkdirs() }
                 check(directory.isDirectory) { "프로필 사진 저장 공간을 만들지 못했습니다" }
-                val extension = when (photo.mimeType.lowercase()) {
-                    "image/png" -> "png"
-                    "image/webp" -> "webp"
-                    else -> "jpg"
-                }
-                File(directory, "profile_${source.id}_${System.currentTimeMillis()}.$extension").also { file ->
-                    file.writeBytes(photo.data)
+                File(directory, "profile_${source.id}_${System.currentTimeMillis()}.${photo.extension}").also { file ->
+                    photo.writeTo(file)
                     restoredPhotoFiles += file
                 }.let(Uri::fromFile).toString()
             }
@@ -118,16 +192,12 @@ class ProfileBackupManager(
         }
 
         val restoredMemorialPhotoFiles = mutableListOf<File>()
-        val restoredMemorialPhotos = preview.snapshot.memorialPhotos.map { photo ->
-            val directory = File(appContext.filesDir, MEMORIAL_PHOTO_DIRECTORY).apply { mkdirs() }
+        val restoredMemorialPhotos = preview.snapshot.memorialPhotos.mapNotNull { photo ->
+            val source = photo.photo ?: return@mapNotNull null
+            val directory = File(appContext.filesDir, PhotoStore.MEMORIAL_DIRECTORY).apply { mkdirs() }
             check(directory.isDirectory) { "추억 사진 저장 공간을 만들지 못했습니다" }
-            val extension = when (photo.photo.mimeType.lowercase()) {
-                "image/png" -> "png"
-                "image/webp" -> "webp"
-                else -> "jpg"
-            }
-            val file = File(directory, "memorial_${photo.reptileId}_${System.currentTimeMillis()}_${photo.id}.$extension").also { file ->
-                file.writeBytes(photo.photo.data)
+            val file = File(directory, "memorial_${photo.reptileId}_${System.currentTimeMillis()}_${photo.id}.${source.extension}").also { file ->
+                source.writeTo(file)
                 restoredMemorialPhotoFiles += file
             }
             MemorialPhoto(photo.id, photo.reptileId, Uri.fromFile(file).toString(), photo.addedAt)
@@ -164,6 +234,9 @@ class ProfileBackupManager(
         // Calendar entries live in SharedPreferences, not the Room database, so they're
         // applied after the DB transaction commits rather than as part of it.
         calendarEntryStore.importAll(preview.snapshot.calendarEntries)
+        // 복원은 DB 행을 전부 갈아끼우므로 이전 프로필/추억 사진이 참조를 잃고 디스크에 남는다.
+        // 그 고아들은 방금 만들어진 파일이라 유예를 두면 하나도 안 지워진다 — 여기서는 0으로 훑는다.
+        runCatching { PhotoStore.deleteOrphans(appContext, database, gracePeriodMs = 0L) }
 
         return BackupResult(
             createdAt = preview.createdAt,
@@ -195,20 +268,10 @@ class ProfileBackupManager(
             memorialPhotoEntities = database.memorialPhotoDao().all()
         }
 
-        var skippedPhotos = 0
-        val profiles = reptiles.map { reptile ->
-            val photo = reptile.photoUri?.let(::readPhoto)
-            if (reptile.photoUri != null && photo == null) skippedPhotos += 1
-            ProfileSnapshot(reptile, photo)
-        }
-        val memorialPhotos = memorialPhotoEntities.mapNotNull { entity ->
-            val photo = readPhoto(entity.photoUri)
-            if (photo == null) {
-                skippedPhotos += 1
-                null
-            } else {
-                MemorialPhotoSnapshot(entity.id, entity.reptileId, entity.addedAt, photo)
-            }
+        // 사진 바이트는 여기서 읽지 않는다. writeArchive가 ZIP 엔트리로 한 장씩 흘려보낸다.
+        val profiles = reptiles.map { ProfileSnapshot(it, photo = null) }
+        val memorialPhotos = memorialPhotoEntities.map { entity ->
+            MemorialPhotoSnapshot(entity.id, entity.reptileId, entity.addedAt, entity.photoUri, photo = null)
         }
         return BackupSnapshot(
             createdAt = System.currentTimeMillis(),
@@ -221,28 +284,20 @@ class ProfileBackupManager(
             clutches = clutches,
             hatchlings = hatchlings,
             memorialPhotos = memorialPhotos,
-            calendarEntries = calendarEntryStore.exportAll(),
-            skippedPhotoCount = skippedPhotos
+            calendarEntries = calendarEntryStore.exportAll()
         )
     }
 
-    private fun readPhoto(uriValue: String): BackupPhoto? = runCatching {
-        val uri = Uri.parse(uriValue)
-        val bytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            ?: return@runCatching null
-        if (bytes.isEmpty()) return@runCatching null
-        val mimeType = appContext.contentResolver.getType(uri)
-            ?: when (uri.lastPathSegment?.substringAfterLast('.', "")?.lowercase()) {
-                "png" -> "image/png"
-                "webp" -> "image/webp"
-                else -> "image/jpeg"
-            }
-        BackupPhoto(mimeType, bytes)
-    }.getOrNull()
+    private fun profilePhotoEntry(id: Long, uriValue: String) = "$PHOTO_ENTRY_PREFIX/profile_$id.${photoExtension(uriValue)}"
+    private fun memorialPhotoEntry(id: Long, uriValue: String) = "$PHOTO_ENTRY_PREFIX/memorial_$id.${photoExtension(uriValue)}"
+
+    private fun photoExtension(uriValue: String): String =
+        Uri.parse(uriValue).lastPathSegment?.substringAfterLast('.', "")?.lowercase()
+            ?.takeIf { it in KNOWN_PHOTO_EXTENSIONS } ?: "jpg"
 
     private fun BackupSnapshot.toJson(): JSONObject = JSONObject().apply {
         put("format", BACKUP_FORMAT)
-        put("schemaVersion", SCHEMA_VERSION)
+        put("schemaVersion", ARCHIVE_SCHEMA_VERSION)
         put("createdAt", createdAt)
         put("profiles", JSONArray().apply {
             profiles.forEach { profile ->
@@ -260,12 +315,7 @@ class ProfileBackupManager(
                     putNullable("adoptionDate", entity.adoptionDate)
                     putNullable("deathDate", entity.deathDate)
                     putNullable("memorialNote", entity.memorialNote)
-                    put("photo", profile.photo?.let { photo ->
-                        JSONObject().apply {
-                            put("mimeType", photo.mimeType)
-                            put("base64", Base64.encodeToString(photo.data, Base64.NO_WRAP))
-                        }
-                    } ?: JSONObject.NULL)
+                    putNullable("photoEntry", entity.photoUri?.let { profilePhotoEntry(entity.id, it) })
                 })
             }
         })
@@ -275,10 +325,7 @@ class ProfileBackupManager(
                     put("id", photo.id)
                     put("reptileId", photo.reptileId)
                     put("addedAt", photo.addedAt)
-                    put("photo", JSONObject().apply {
-                        put("mimeType", photo.photo.mimeType)
-                        put("base64", Base64.encodeToString(photo.photo.data, Base64.NO_WRAP))
-                    })
+                    putNullable("photoEntry", photo.sourceUri?.let { memorialPhotoEntry(photo.id, it) })
                 })
             }
         })
@@ -381,10 +428,12 @@ class ProfileBackupManager(
         })
     }
 
-    private fun parseSnapshot(json: String): BackupSnapshot {
+    /** [archive]가 있으면 ZIP 백업(사진은 별도 엔트리), null이면 예전 v1 JSON 백업(Base64 인라인). */
+    private fun parseSnapshot(json: String, archive: ZipFile?): BackupSnapshot {
         val root = runCatching { JSONObject(json) }
             .getOrElse { throw InvalidBackupException("백업 파일을 읽을 수 없습니다") }
-        if (root.optString("format") != BACKUP_FORMAT || root.optInt("schemaVersion") != SCHEMA_VERSION) {
+        val expectedVersion = if (archive != null) ARCHIVE_SCHEMA_VERSION else LEGACY_SCHEMA_VERSION
+        if (root.optString("format") != BACKUP_FORMAT || root.optInt("schemaVersion") != expectedVersion) {
             throw InvalidBackupException("지원하지 않는 백업 형식입니다")
         }
         val backupCreatedAt = root.optLong("createdAt", -1L)
@@ -392,13 +441,7 @@ class ProfileBackupManager(
 
         val profiles = root.requiredArray("profiles").mapObjects { value ->
             val id = value.requiredPositiveLong("id")
-            val photo = if (value.isNull("photo")) null else value.getJSONObject("photo").let { photoValue ->
-                val mimeType = photoValue.optString("mimeType", "image/jpeg")
-                val bytes = runCatching { Base64.decode(photoValue.getString("base64"), Base64.DEFAULT) }
-                    .getOrElse { throw InvalidBackupException("프로필 사진 데이터가 손상되었습니다") }
-                if (bytes.isEmpty()) throw InvalidBackupException("비어 있는 프로필 사진이 있습니다")
-                BackupPhoto(mimeType, bytes)
-            }
+            val photo = readPhotoReference(value, archive, "프로필 사진")
             ProfileSnapshot(
                 entity = Reptile(
                     id,
@@ -509,16 +552,12 @@ class ProfileBackupManager(
         }
 
         val memorialPhotos = root.optionalArray("memorialPhotos").mapObjects { value ->
-            val photoValue = value.getJSONObject("photo")
-            val mimeType = photoValue.optString("mimeType", "image/jpeg")
-            val bytes = runCatching { Base64.decode(photoValue.getString("base64"), Base64.DEFAULT) }
-                .getOrElse { throw InvalidBackupException("추억 사진 데이터가 손상되었습니다") }
-            if (bytes.isEmpty()) throw InvalidBackupException("비어 있는 추억 사진이 있습니다")
             MemorialPhotoSnapshot(
                 id = value.requiredPositiveLong("id"),
                 reptileId = value.requiredPositiveLong("reptileId"),
                 addedAt = value.getLong("addedAt"),
-                photo = BackupPhoto(mimeType, bytes)
+                sourceUri = null,
+                photo = readPhotoReference(value, archive, "추억 사진")
             )
         }
 
@@ -553,13 +592,32 @@ class ProfileBackupManager(
             clutches = clutches,
             hatchlings = hatchlings,
             memorialPhotos = memorialPhotos,
-            calendarEntries = calendarEntries,
-            skippedPhotoCount = 0
+            calendarEntries = calendarEntries
         )
     }
 
+    /** ZIP 백업이면 "photoEntry"가 가리키는 엔트리를, 예전 JSON 백업이면 "photo" 안의 Base64를 읽는다. */
+    private fun readPhotoReference(value: JSONObject, archive: ZipFile?, label: String): BackupPhoto? {
+        if (archive != null) {
+            val name = value.nullableString("photoEntry") ?: return null
+            val entry = archive.getEntry(name)
+                ?: throw InvalidBackupException("백업에 없는 $label 를 가리키고 있습니다")
+            return BackupPhoto.Entry(archive, entry)
+        }
+        if (!value.has("photo") || value.isNull("photo")) return null
+        val photoValue = value.getJSONObject("photo")
+        val bytes = runCatching { Base64.decode(photoValue.getString("base64"), Base64.DEFAULT) }
+            .getOrElse { throw InvalidBackupException("$label 데이터가 손상되었습니다") }
+        if (bytes.isEmpty()) throw InvalidBackupException("비어 있는 $label 이 있습니다")
+        return BackupPhoto.Inline(photoValue.optString("mimeType", "image/jpeg"), bytes)
+    }
+
     private fun listBackupFiles(accessToken: String): List<RemoteFile> {
-        val query = URLEncoder.encode("name = '$BACKUP_FILE_NAME' and trashed = false", "UTF-8")
+        // 구버전으로 백업해 둔 사용자도 복원할 수 있어야 하므로 예전 JSON 파일명까지 함께 찾는다.
+        val query = URLEncoder.encode(
+            "(name = '$ARCHIVE_FILE_NAME' or name = '$LEGACY_FILE_NAME') and trashed = false",
+            "UTF-8"
+        )
         val fields = URLEncoder.encode("files(id,modifiedTime)", "UTF-8")
         val response = request(
             url = "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=$query&orderBy=modifiedTime%20desc&pageSize=20&fields=$fields",
@@ -572,29 +630,81 @@ class ProfileBackupManager(
         }
     }
 
-    private fun createBackupFile(accessToken: String, content: ByteArray) {
+    /** multipart 본문을 통째로 메모리에 만들지 않고, 앞뒤 헤더 사이로 ZIP 파일을 그대로 흘려보낸다. */
+    private fun uploadArchive(accessToken: String, archive: File) {
         val boundary = "beardylog_${System.currentTimeMillis()}"
         val metadata = JSONObject().apply {
-            put("name", BACKUP_FILE_NAME)
-            put("mimeType", BACKUP_MIME_TYPE)
+            put("name", ARCHIVE_FILE_NAME)
+            put("mimeType", ARCHIVE_MIME_TYPE)
             put("parents", JSONArray().put("appDataFolder"))
         }
-        val body = ByteArrayOutputStream().apply {
-            writeUtf8("--$boundary\r\n")
-            writeUtf8("Content-Type: application/json; charset=UTF-8\r\n\r\n")
-            writeUtf8(metadata.toString())
-            writeUtf8("\r\n--$boundary\r\n")
-            writeUtf8("Content-Type: $BACKUP_MIME_TYPE\r\n\r\n")
-            write(content)
-            writeUtf8("\r\n--$boundary--\r\n")
-        }.toByteArray()
-        request(
+        val prefix = (
+            "--$boundary\r\n" +
+                "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+                metadata.toString() +
+                "\r\n--$boundary\r\n" +
+                "Content-Type: $ARCHIVE_MIME_TYPE\r\n\r\n"
+            ).toByteArray(StandardCharsets.UTF_8)
+        val suffix = "\r\n--$boundary--\r\n".toByteArray(StandardCharsets.UTF_8)
+        streamingRequest(
             url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
-            method = "POST",
             accessToken = accessToken,
             contentType = "multipart/related; boundary=$boundary",
-            body = body
-        )
+            contentLength = prefix.size + archive.length() + suffix.size
+        ) { output ->
+            output.write(prefix)
+            archive.inputStream().use { it.copyTo(output) }
+            output.write(suffix)
+        }
+    }
+
+    private fun streamingRequest(
+        url: String,
+        accessToken: String,
+        contentType: String,
+        contentLength: Long,
+        writeBody: (OutputStream) -> Unit
+    ) {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "POST"
+            connection.connectTimeout = CONNECT_TIMEOUT_MS
+            connection.readTimeout = READ_TIMEOUT_MS
+            connection.setRequestProperty("Authorization", "Bearer $accessToken")
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("Content-Type", contentType)
+            connection.doOutput = true
+            connection.setFixedLengthStreamingMode(contentLength)
+            connection.outputStream.use(writeBody)
+            val responseCode = connection.responseCode
+            if (responseCode !in 200..299) throw DriveBackupException(failureMessage(connection, responseCode))
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /** 응답을 메모리에 담지 않고 파일로 바로 받는다. 백업이 커도 다운로드 자체는 상수 메모리. */
+    private fun downloadTo(url: String, accessToken: String, target: File) {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = CONNECT_TIMEOUT_MS
+            connection.readTimeout = READ_TIMEOUT_MS
+            connection.setRequestProperty("Authorization", "Bearer $accessToken")
+            val responseCode = connection.responseCode
+            if (responseCode !in 200..299) throw DriveBackupException(failureMessage(connection, responseCode))
+            connection.inputStream.use { input -> target.outputStream().use { input.copyTo(it) } }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun failureMessage(connection: HttpURLConnection, responseCode: Int): String {
+        val detail = runCatching {
+            val body = connection.errorStream?.use { it.readBytes() } ?: ByteArray(0)
+            JSONObject(String(body, StandardCharsets.UTF_8)).optJSONObject("error")?.optString("message")
+        }.getOrNull().takeUnless { it.isNullOrBlank() }
+        return detail ?: "Google Drive 요청 실패 ($responseCode)"
     }
 
     private fun deleteFile(accessToken: String, fileId: String) {
@@ -605,13 +715,8 @@ class ProfileBackupManager(
         )
     }
 
-    private fun request(
-        url: String,
-        method: String,
-        accessToken: String,
-        contentType: String? = null,
-        body: ByteArray? = null
-    ): ByteArray {
+    /** 목록/삭제처럼 응답이 작은 요청 전용. 백업 본문은 streamingRequest/downloadTo를 쓴다. */
+    private fun request(url: String, method: String, accessToken: String): ByteArray {
         val connection = URL(url).openConnection() as HttpURLConnection
         try {
             connection.requestMethod = method
@@ -619,12 +724,6 @@ class ProfileBackupManager(
             connection.readTimeout = READ_TIMEOUT_MS
             connection.setRequestProperty("Authorization", "Bearer $accessToken")
             connection.setRequestProperty("Accept", "application/json")
-            if (body != null) {
-                connection.doOutput = true
-                connection.setFixedLengthStreamingMode(body.size)
-                connection.setRequestProperty("Content-Type", contentType ?: "application/octet-stream")
-                connection.outputStream.use { it.write(body) }
-            }
             val responseCode = connection.responseCode
             val response = (if (responseCode in 200..299) connection.inputStream else connection.errorStream)
                 ?.use { it.readBytes() }
@@ -645,13 +744,6 @@ class ProfileBackupManager(
 
     private fun BackupSnapshot.calendarDatesCount(): Int =
         calendarEntries.keys.mapNotNull { it.substringBefore('_', "").toLongOrNull() }.toSet().size
-
-    private fun BackupSnapshot.result(): BackupResult = BackupResult(
-        createdAt = createdAt,
-        profileCount = profiles.size,
-        photoCount = profiles.count { it.photo != null } + memorialPhotos.size,
-        skippedPhotoCount = skippedPhotoCount
-    )
 
     private fun JSONObject.putNullable(name: String, value: Any?) {
         put(name, value ?: JSONObject.NULL)
@@ -684,10 +776,6 @@ class ProfileBackupManager(
             transform(value)
         }
 
-    private fun ByteArrayOutputStream.writeUtf8(value: String) {
-        write(value.toByteArray(StandardCharsets.UTF_8))
-    }
-
     internal data class BackupSnapshot(
         val createdAt: Long,
         val profiles: List<ProfileSnapshot>,
@@ -699,13 +787,46 @@ class ProfileBackupManager(
         val clutches: List<Clutch>,
         val hatchlings: List<Hatchling>,
         val memorialPhotos: List<MemorialPhotoSnapshot>,
-        val calendarEntries: Map<String, Any>,
-        val skippedPhotoCount: Int
+        val calendarEntries: Map<String, Any>
     )
 
     internal data class ProfileSnapshot(val entity: Reptile, val photo: BackupPhoto?)
-    internal data class MemorialPhotoSnapshot(val id: Long, val reptileId: Long, val addedAt: Long, val photo: BackupPhoto)
-    internal data class BackupPhoto(val mimeType: String, val data: ByteArray)
+
+    /** [sourceUri]는 백업할 때(앱 안의 원본 경로), [photo]는 복원할 때(백업 안의 사진) 채워진다. */
+    internal data class MemorialPhotoSnapshot(
+        val id: Long,
+        val reptileId: Long,
+        val addedAt: Long,
+        val sourceUri: String?,
+        val photo: BackupPhoto?
+    )
+
+    /** 복원할 사진 한 장의 출처. ZIP 백업이면 아카이브 안에 남아 있다가 파일로 쓸 때 꺼내지고,
+     *  예전 JSON 백업이면 이미 디코드된 바이트를 들고 있다. */
+    internal sealed interface BackupPhoto {
+        val extension: String
+        fun writeTo(target: File)
+
+        class Entry(private val archive: ZipFile, private val entry: ZipEntry) : BackupPhoto {
+            override val extension: String get() = entry.name.substringAfterLast('.', "jpg")
+            override fun writeTo(target: File) {
+                archive.getInputStream(entry).use { input ->
+                    target.outputStream().use { input.copyTo(it) }
+                }
+            }
+        }
+
+        class Inline(private val mimeType: String, private val data: ByteArray) : BackupPhoto {
+            override val extension: String get() = when (mimeType.lowercase()) {
+                "image/png" -> "png"
+                "image/webp" -> "webp"
+                else -> "jpg"
+            }
+            override fun writeTo(target: File) {
+                target.writeBytes(data)
+            }
+        }
+    }
     private data class RemoteFile(val id: String)
 
     class NoBackupFoundException : Exception("Google Drive에 저장된 백업이 없습니다")
@@ -715,11 +836,18 @@ class ProfileBackupManager(
 
     private companion object {
         const val BACKUP_FORMAT = "beardylog-profile-backup"
-        const val SCHEMA_VERSION = 1
-        const val BACKUP_FILE_NAME = "beardylog_profile_backup_v1.json"
-        const val BACKUP_MIME_TYPE = "application/json"
-        const val RESTORED_PHOTO_DIRECTORY = "profile_photos"
-        const val MEMORIAL_PHOTO_DIRECTORY = "memorial_photos"
+
+        /** ZIP 컨테이너. manifest.json에는 DB 레코드만 있고 사진은 photos/ 엔트리로 따로 들어간다. */
+        const val ARCHIVE_SCHEMA_VERSION = 2
+        const val ARCHIVE_FILE_NAME = "beardylog_profile_backup_v2.zip"
+        const val ARCHIVE_MIME_TYPE = "application/zip"
+        const val MANIFEST_ENTRY = "manifest.json"
+        const val PHOTO_ENTRY_PREFIX = "photos"
+        val KNOWN_PHOTO_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
+
+        /** 사진을 Base64로 인라인하던 예전 형식. 새로 쓰지는 않고 복원만 지원한다. */
+        const val LEGACY_SCHEMA_VERSION = 1
+        const val LEGACY_FILE_NAME = "beardylog_profile_backup_v1.json"
         const val CONNECT_TIMEOUT_MS = 15_000
         const val READ_TIMEOUT_MS = 60_000
     }
