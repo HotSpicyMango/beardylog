@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>BeardyLog</title>
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            html {
+                min-height: 100%;
+                background: #8b9aa5;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+                background: radial-gradient(circle at top, rgba(255, 255, 255, 0.22), transparent 38%), linear-gradient(180deg, #8b9aa5 0%, #5d6b7a 45%, #1b2538 100%);
+                color: #f5f5f5;
+
+                display: flex;
+                justify-content: center;
+            }
+
+            /* 전체 영역 */
+
+            .container {
+                width: 100%;
+                max-width: 680px;
+
+                padding: 36px 20px 40px;
+
+                text-align: center;
+            }
+
+            /* 앱 정보 */
+
+            .app {
+                margin-bottom: 28px;
+            }
+
+            .app-icon {
+                width: 100px;
+                height: 100px;
+
+                object-fit: cover;
+
+                display: block;
+                margin: 0 auto 18px;
+
+                border-radius: 24px;
+
+                background: #1f1f1f;
+                border: 1px solid #4a4a4a;
+
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            }
+
+            .app-name {
+                margin: 0;
+
+                font-size: 25px;
+                font-weight: 750;
+
+                letter-spacing: 0;
+            }
+
+            .app-description {
+                margin: 9px 0 0;
+
+                color: #d0d0d0;
+
+                font-size: 14px;
+                line-height: 1.55;
+            }
+
+            /* 링크 */
+
+            .links {
+                display: flex;
+                flex-direction: column;
+                gap: 13px;
+            }
+
+            .link {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                min-height: 58px;
+                padding: 14px 48px;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.9);
+                border-radius: 60px;
+                color: #f4f4f4;
+                text-decoration: none;
+                font-size: 15px;
+                font-weight: 600;
+                box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+            }
+
+            .link--install {
+                background: linear-gradient(135deg, #1687d9 0%, #16b8a6 100%);
+                border-color: rgba(22, 184, 166, 0.72);
+                box-shadow: 0 10px 26px rgba(11, 133, 166, 0.42);
+            }
+
+            .source-link {
+                display: inline-block;
+                margin-top: 12px;
+                color: #d7d7d7;
+                text-decoration: none;
+                font-size: 13px;
+            }
+
+            .source-link:active {
+                color: #fff;
+            }
+
+            .source-link:focus-visible {
+                outline: 2px solid #d7d7d7;
+                outline-offset: 3px;
+            }
+
+            .link:active {
+                transform: scale(0.98);
+            }
+
+            .link:focus-visible {
+                outline: 2px solid #d7d7d7;
+                outline-offset: 3px;
+            }
+
+            /* 아이콘 */
+
+            .link-icon {
+                position: absolute;
+                left: 18px;
+                width: 25px;
+                height: 25px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 19px;
+            }
+
+            /* 오른쪽 화살표 */
+
+            .link-arrow {
+                position: absolute;
+                right: 19px;
+                color: #d2d2d2;
+                font-size: 18px;
+            }
+
+            .community {
+                margin-top: 30px;
+                text-align: left;
+            }
+
+            .community-title {
+                margin: 0 0 8px;
+                color: #f5f5f5;
+                font-size: 14px;
+                font-weight: 700;
+            }
+
+            .community-links {
+                border-top: 1px solid rgba(255, 255, 255, 0.18);
+            }
+
+            .community-link {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-height: 50px;
+                padding: 12px 2px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+                color: #e5e5e5;
+                text-decoration: none;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+
+            .community-link:active {
+                color: #fff;
+            }
+
+            .community-link:focus-visible {
+                outline: 2px solid #d7d7d7;
+                outline-offset: 3px;
+            }
+
+            .community-link .link-icon {
+                position: static;
+                flex: 0 0 25px;
+            }
+
+            .community-link .link-arrow {
+                position: static;
+                margin-left: auto;
+                color: #bdbdbd;
+            }
+
+            /* 앱 소개 */
+
+            .about {
+                margin-top: 30px;
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.07);
+                border: 1px solid #555;
+                border-radius: 14px;
+                text-align: left;
+            }
+
+            .about-title {
+                margin: 0 0 8px;
+                font-size: 15px;
+                font-weight: 700;
+            }
+
+            .about-text {
+                margin: 0;
+                color: #d0d0d0;
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            /* Footer */
+
+            .footer {
+                margin-top: 28px;
+                color: #9f9f9f;
+                font-size: 11px;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <main class="container">
+
+            <!-- ========================= 앱 정보 ========================== -->
+
+            <section class="app">
+
+                <!-- 앱 아이콘 -->
+                <img class="app-icon" src="appicon.png" alt="앱 아이콘">
+
+                <!-- 앱 이름 -->
+                <h1 class="app-name">
+                    BeardyLog
+                </h1>
+
+            </section>
+
+            <!-- ========================= 앱 다운로드 ========================== -->
+
+            <section class="links">
+
+                <a
+                    class="link link--install"
+                    href="https://github.com/HotSpicyMango/beardylog/releases/tag/0.1.0"
+                    target="_blank"
+                    rel="noopener noreferrer">
+
+                    <span class="link-icon">
+                        📱
+                    </span>
+                    Beardy Log 다운로드
+                    <span class="link-arrow">
+                        ›
+                    </span>
+
+                </a>
+
+                <a
+                    class="source-link"
+                    href="https://github.com/HotSpicyMango/beardylog"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    GitHub에서 소스 코드 보기 ↗
+                </a>
+
+            </section>
+
+            <!-- ========================= 앱 소개 ========================== -->
+
+            <section class="about">
+
+                <h2 class="about-title">
+                    #BEARDY_LOG
+                </h2>
+
+                <p class="about-text">
+                    도마뱀을 키우는 사람을 위한 사육 기록 앱. 개체별 프로필에 식단·온욕·청소를 달력으로 남기고, 몸무게 변화는 그래프로 봅니다. 브리딩 기록과
+                    Google Drive 백업을 지원하며, 먼저 떠난 아이는 추억공간에 남겨 둡니다.
+                </p>
+
+            </section>
+
+            <!-- ========================= 커뮤니티 및 문의 ========================== -->
+
+            <section class="community">
+
+                <h2 class="community-title">
+                    커뮤니티 및 문의
+                </h2>
+
+                <div class="community-links">
+
+                    <a
+                        class="community-link"
+                        href="https://www.instagram.com/beardy._world?igsi=NGdzN3k3bDBtd3Fx"
+                        target="_blank"
+                        rel="noopener noreferrer">
+
+                        <span class="link-icon">
+                            📷
+                        </span>
+
+                        <span>
+                            비월 Instagram
+                        </span>
+
+                        <span class="link-arrow">
+                            ↗
+                        </span>
+
+                    </a>
+
+                    <a
+                        class="community-link"
+                        href="https://open.kakao.com/o/gBs8VUEi"
+                        target="_blank"
+                        rel="noopener noreferrer">
+
+                        <span class="link-icon">
+                            💬
+                        </span>
+
+                        <span>
+                            BBC 비어디브리딩클럽 오픈채팅방
+                        </span>
+
+                        <span class="link-arrow">
+                            ↗
+                        </span>
+
+                    </a>
+
+                    <a
+                        class="community-link"
+                        href="https://open.kakao.com/o/gYBZSo6g"
+                        target="_blank"
+                        rel="noopener noreferrer">
+
+                        <span class="link-icon">
+                            💬
+                        </span>
+
+                        <span>
+                            토마의 비어디 사랑방 오픈채팅방
+                        </span>
+
+                        <span class="link-arrow">
+                            ↗
+                        </span>
+
+                    </a>
+
+                    <a
+                        class="community-link"
+                        href="https://open.kakao.com/o/sriHlIKh"
+                        target="_blank"
+                        rel="noopener noreferrer">
+
+                        <span class="link-icon">
+                            ✉️
+                        </span>
+
+                        <span>
+                            비월 입양/분양 개인 문의
+                        </span>
+
+                        <span class="link-arrow">
+                            ↗
+                        </span>
+
+                    </a>
+
+                </div>
+
+            </section>
+
+            <!-- ========================= Footer ========================== -->
+
+            <footer class="footer">
+                © 2026 BeardyLog
+            </footer>
+
+        </main>
+
+    </body>
+</html>
