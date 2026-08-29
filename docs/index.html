@@ -4,11 +4,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>BeardyLog</title>
+        <title>비어디로그</title>
 
         <meta
             name="description"
-            content="도마뱀의 일상 관리 기록을 간단하게 남기는 앱. 개체별 프로필에 식단·온욕·청소를 달력으로 남기고, 몸무게 변화는 그래프로 봅니다.">
+            content="도마뱀의 관리와 기록을 편하게 하세요. 개체별 프로필에 식단과 관리 일정을 달력으로 남기고, 몸무게 변화는 그래프로 봅니다. 브리딩 기록과 Google Drive 백업을 지원합니다.">
         <meta name="theme-color" content="#16171b" media="(prefers-color-scheme: dark)">
         <meta
             name="theme-color"
@@ -18,15 +18,16 @@
         <link rel="apple-touch-icon" href="appicon.png">
 
         <meta property="og:type" content="website">
-        <meta property="og:site_name" content="BeardyLog">
+        <meta property="og:site_name" content="비어디로그">
         <meta property="og:url" content="https://hotspicymango.github.io/beardylog/">
-        <meta property="og:title" content="BeardyLog - 도마뱀 사육 기록 앱">
+        <meta property="og:title" content="비어디로그">
         <meta
             property="og:description"
-            content="개체별 프로필에 식단·온욕·청소를 달력으로 남기고, 몸무게 변화는 그래프로 봅니다.">
+            content="개체별 프로필에 식단과 관리 일정을 달력으로 남기고, 몸무게 변화는 그래프로 봅니다.">
         <meta
             property="og:image"
             content="https://hotspicymango.github.io/beardylog/appicon.png">
+        <meta property="og:locale" content="ko_KR">
         <meta name="twitter:card" content="summary">
 
         <link
@@ -156,50 +157,19 @@
             }
 
             .app-name {
-                position: relative;
-                height: 1.3em;
-
                 margin: 0;
                 font-size: 26px;
                 font-weight: 600;
                 letter-spacing: -0.02em;
             }
 
-            /* 두 이름이 반 주기씩 어긋나게 교대한다. JS 없음. */
-            .app-name span {
-                position: absolute;
-                left: 0;
-                right: 0;
-
-                /* backwards: 지연 시간 동안 0% 키프레임(투명)을 적용해 겹침 방지 */
-                animation: name-swap 7s infinite backwards;
-            }
-
-            .app-name span + span {
-                animation-delay: 3.5s;
-            }
-
-            @keyframes name-swap {
-                0% {
-                    opacity: 0;
-                    filter: blur(6px);
-                }
-                8%, 42% {
-                    opacity: 1;
-                    filter: blur(0);
-                }
-                50%, 100% {
-                    opacity: 0;
-                    filter: blur(6px);
-                }
-            }
-
+            /* 부제목 단어 교대. 앞 span이 흐름에 남아 폭을 잡고, 뒤 span이 그 위에 겹친다. */
             @media (prefers-reduced-motion: reduce) {
-                .app-name span {
+                .swap span {
                     animation: none;
                 }
 
-                .app-name span + span {
+                .swap span + span {
                     display: none;
                 }
             }
@@ -208,6 +178,59 @@
                 margin: 6px 0 0;
                 color: var(--muted);
                 font-size: 13px;
+            }
+
+            /* 앞뒤 문구는 고정. 가운데 단어만 교대한다. */
+            .swap {
+                position: relative;
+                display: inline-block;
+            }
+
+            /* 폭 고정용 사이저. 세 단어 모두 3글자라 어느 것을 넣어도 같다. */
+            .swap::before {
+                content: "관리가";
+                visibility: hidden;
+            }
+
+            /* 단어 세 개를 겹쳐 두고 9초에 한 바퀴. 한 단어당 3초. */
+            .swap span {
+                position: absolute;
+                left: 0;
+                right: 0;
+
+                /* backwards: 지연 시간 동안 0% 키프레임(투명)을 적용해 겹침 방지 */
+                animation: word-swap 9s infinite backwards;
+            }
+
+            .swap span:nth-child(2) {
+                animation-delay: 3s;
+            }
+
+            .swap span:nth-child(3) {
+                animation-delay: 6s;
+            }
+
+            @keyframes word-swap {
+                0% {
+                    opacity: 0;
+                    transform: translateY(7px);
+                    /* 부드럽게 도착 */
+                    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                29%,
+                9% {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                29.001% {
+                    /* 가속하며 빠져나감 */
+                    animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
+                }
+                100%,
+                38% {
+                    opacity: 0;
+                    transform: translateY(-7px);
+                }
             }
 
             /* ========================= 링크 ========================== */
@@ -289,18 +312,8 @@
                 scrollbar-width: none;
 
                 /* 잘린 쪽 가장자리를 흐리게. --fade-* 는 스크롤 위치에 따라 JS가 0~28px로 채운다. */
-                -webkit-mask-image: linear-gradient(
-                    to right,
-                    transparent 0,
-                    #000 var(--fade-l, 0px),
-                    #000 calc(100% - var(--fade-r, 0px)),
-                    transparent 100%);
-                mask-image: linear-gradient(
-                    to right,
-                    transparent 0,
-                    #000 var(--fade-l, 0px),
-                    #000 calc(100% - var(--fade-r, 0px)),
-                    transparent 100%);
+                -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
+                mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
             }
 
             .shots::-webkit-scrollbar {
@@ -420,6 +433,12 @@
 
             /* 문의 */
 
+            .contacts {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
             .contact {
                 display: inline-flex;
                 align-items: center;
@@ -446,6 +465,12 @@
                 stroke-width: 2;
                 stroke-linecap: round;
                 stroke-linejoin: round;
+            }
+
+            /* 브랜드 로고는 선이 아니라 면으로 그려진다 */
+            .contact svg.mark {
+                fill: var(--accent);
+                stroke: none;
             }
 
             .contact .ext {
@@ -484,15 +509,16 @@
 
             <section class="app">
 
-                <img class="app-icon" src="appicon.png" alt="BeardyLog 앱 아이콘">
+                <img class="app-icon" src="appicon.png" alt="비어디로그 앱 아이콘">
 
                 <h1 class="app-name">
-                    <span>BeardyLog</span>
-                    <span>비어디로그</span>
+                    비어디로그
                 </h1>
 
                 <p class="app-description">
-                    도마뱀의 관리와 기록을 편하게 하세요
+                    도마뱀의
+                    <span class="swap"><span>관리가</span><span>기록이</span><span>번식이</span></span>
+                    편해집니다.
                 </p>
 
             </section>
@@ -506,7 +532,7 @@
                     href="https://github.com/HotSpicyMango/beardylog/releases/latest/download/app-release.apk"
                     target="_blank"
                     rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <svg viewbox="0 0 24 24" aria-hidden="true">
                         <path d="M12 3.5v11"/>
                         <path d="m7.5 10 4.5 4.5 4.5-4.5"/>
                         <path d="M4.5 19.5h15"/>
@@ -515,10 +541,10 @@
                 </a>
 
                 <p class="install-note">
-                    .apk 파일을 열면
+                    .apk 파일을 열면 Play 스토어를 거치지 않는 앱이라
                     <b>“알 수 없는 출처”</b>
-                    경고가 뜨는데, 스토어를 거치지 않는 앱이라 정상입니다.
-                    <b>허용</b>을 누르면 설치됩니다.
+                    경고가 뜹니다.
+                    <b>허용</b>을 누르면 설치할 수 있습니다.
                 </p>
 
             </section>
@@ -623,21 +649,20 @@
 
                     <details>
                         <summary>기록한 내용은 어디에 저장되나요?</summary>
-                        <p>기기 안에만 저장됩니다. 회원가입이 없고 앱이 데이터를 보내는 서버도 없어서, 인터넷 없이도 기록할 수 있습니다. 자세한 내용은 <a href="privacy.html">개인정보처리방침</a>에 있습니다.</p>
+                        <p>기기 안에만 저장됩니다. 회원가입이 없고 앱이 데이터를 보내는 서버도 없어서, 인터넷 없이도 기록할 수 있습니다. 자세한 내용은
+                            <a href="privacy.html">개인정보처리방침</a>에 있습니다.</p>
                     </details>
-
 
                     <details>
                         <summary>기기를 바꾸면 기록이 옮겨지나요?</summary>
-                        <p>설정에서 Google Drive에 백업해 두면 새 기기에서 복원할 수 있습니다. 사진까지 함께 옮겨집니다. 백업하지 않고 앱을 지우면 기록도 같이 사라지니, 기기를 바꾸기 전에 먼저 백업해 주세요.</p>
+                        <p>설정에서 Google Drive에 백업해 두면 새 기기에서 복원할 수 있습니다. 사진까지 함께 옮겨집니다. 백업하지 않고 앱을 지우면
+                            기록도 같이 사라지니, 기기를 바꾸기 전에 먼저 백업해 주세요.</p>
                     </details>
-
 
                     <details>
                         <summary>무료인가요?</summary>
                         <p>무료입니다. 광고도 없고 결제도 없습니다.</p>
                     </details>
-
 
                     <details>
                         <summary>아이폰에서도 쓸 수 있나요?</summary>
@@ -652,29 +677,46 @@
             <section>
 
                 <h2 class="section-title">
-                    문의
+                    문의 · 깃허브 페이지
                 </h2>
 
-                <a
-                    class="contact"
-                    href="https://open.kakao.com/o/sriHlIKh"
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M20 11.5a7.5 7.5 0 0 1-10.1 7L5 20.5l1.3-3.6A7.5 7.5 0 1 1 20 11.5z"/>
-                    </svg>
-                    <span>KAKAO TALK</span>
-                    <span class="ext">↗</span>
-                </a>
+                <div class="contacts">
+
+                    <a
+                        class="contact"
+                        href="https://open.kakao.com/o/sriHlIKh"
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        <svg viewbox="0 0 24 24" aria-hidden="true">
+                            <path d="M20 11.5a7.5 7.5 0 0 1-10.1 7L5 20.5l1.3-3.6A7.5 7.5 0 1 1 20 11.5z"/>
+                        </svg>
+                        <span>문의</span>
+                        <span class="ext">↗</span>
+                    </a>
+
+                    <a
+                        class="contact"
+                        href="https://github.com/HotSpicyMango/beardylog"
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        <svg class="mark" viewbox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58 0-.29-.01-1.04-.02-2.05-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.24-3.22-.12-.31-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.62-2.81 5.64-5.49 5.94.43.37.82 1.1.82 2.22 0 1.6-.02 2.9-.02 3.29 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
+                        </svg>
+                        <span>GitHub</span>
+                        <span class="ext">↗</span>
+                    </a>
+
+                </div>
 
             </section>
 
             <!-- ========================= Footer ========================== -->
 
             <footer class="footer">
-                v0.1.1 · 베타<br>
+                App v0.1.1 · 베타<br>
                 <a href="privacy.html">개인정보처리방침 ↗</a><br>
-                © 2026 비어디월드
+                © 2026 비어디월드 · HotSpicyMango
             </footer>
 
         </main>
@@ -728,11 +770,15 @@
             const fade = () => {
                 const rest = shots.scrollWidth - shots.clientWidth - shots.scrollLeft;
                 const px = v => Math.min(28, Math.max(0, v)) + 'px';
-                shots.style.setProperty('--fade-l', px(shots.scrollLeft));
-                shots.style.setProperty('--fade-r', px(rest));
+                shots
+                    .style
+                    .setProperty('--fade-l', px(shots.scrollLeft));
+                shots
+                    .style
+                    .setProperty('--fade-r', px(rest));
             };
 
-            shots.addEventListener('scroll', fade, { passive: true });
+            shots.addEventListener('scroll', fade, {passive: true});
             addEventListener('resize', fade);
             fade();
         </script>

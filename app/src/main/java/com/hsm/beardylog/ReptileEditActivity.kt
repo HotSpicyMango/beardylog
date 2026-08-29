@@ -19,6 +19,7 @@ import com.hsm.beardylog.viewmodel.ReptileViewModel
 import com.hsm.beardylog.viewmodel.ReptileViewModelFactory
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class ReptileEditActivity : AppBaseActivity() {
@@ -157,7 +158,15 @@ class ReptileEditActivity : AppBaseActivity() {
             val date = LocalDate.of(year, month + 1, day)
             if (isHatching) hatchingDate = date else adoptionDate = date
             updateDateLabels()
-        }, initial.year, initial.monthValue - 1, initial.dayOfMonth).show()
+        }, initial.year, initial.monthValue - 1, initial.dayOfMonth).apply {
+            // 미래 해칭일·입양일은 나이를 음수로 만들고 무게 기록의 하한도 무력화한다.
+            // 다만 제한 도입 전에 미래로 저장된 값을 수정하러 들어오면 초기값이 상한을 넘어
+            // DatePicker가 깨지므로, 그때만 상한을 그 날짜까지 열어 둔다.
+            datePicker.maxDate = maxOf(
+                System.currentTimeMillis(),
+                initial.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            )
+        }.show()
     }
 
     private fun launchCrop(uri: Uri) {

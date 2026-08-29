@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
@@ -30,6 +31,8 @@ class WeightHistoryActivity : AppBaseActivity() {
     private var reptileId = -1L
     private var records: List<WeightRecord> = emptyList()
     private var selectedPeriod = WeightChartPeriod.THREE_MONTHS
+    /** 이 개체가 존재하기 시작한 날. 그 전 무게는 있을 수 없으므로 날짜 선택의 하한이 된다. */
+    private var earliestAllowedDate: LocalDate? = null
     private val historyAdapter by lazy {
         WeightRecordAdapter(
             dateFormatter = rowDateFormatter,
@@ -90,6 +93,10 @@ class WeightHistoryActivity : AppBaseActivity() {
                 finish()
                 return@observe
             }
+            // 해칭일과 입양일이 둘 다 있으면 이른 쪽이 기준이다. 둘 다 없는 예전 데이터는 referenceDate로.
+            earliestAllowedDate = listOfNotNull(reptile.hatchingDate, reptile.adoptionDate).minOrNull()
+                ?.let(LocalDate::ofEpochDay)
+                ?: LocalDate.ofEpochDay(reptile.referenceDate)
             binding.profileName.text = reptile.name
             binding.profileSpecies.text = listOf(reptile.species, reptile.morph)
                 .filter { it.isNotBlank() }
@@ -173,6 +180,12 @@ class WeightHistoryActivity : AppBaseActivity() {
                 sheetBinding.dateInput.setText(selectedDate.format(fullDateFormatter))
             }, selectedDate.year, selectedDate.monthValue - 1, selectedDate.dayOfMonth).apply {
                 datePicker.maxDate = System.currentTimeMillis()
+                earliestAllowedDate?.let { earliest ->
+                    // 이미 저장된 기록이 기준일보다 이르거나(제한 도입 전 데이터) 기준일이 미래로 잘못
+                    // 입력돼 있으면, 하한이 초기값이나 maxDate를 넘어서 DatePicker가 깨진다. 그래서 함께 낮춘다.
+                    val floor = minOf(earliest, selectedDate, LocalDate.now())
+                    datePicker.minDate = floor.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                }
             }.show()
         }
         sheetBinding.cancelButton.setOnClickListener { view ->
