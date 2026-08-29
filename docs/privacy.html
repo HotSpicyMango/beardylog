@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>개인정보처리방침 · BeardyLog</title>
+
+        <meta name="description" content="BeardyLog 개인정보처리방침. 기록은 기기에 저장되며, 백업은 사용자 본인의 Google Drive 앱 전용 폴더에만 보관됩니다.">
+        <meta name="theme-color" content="#16171b" media="(prefers-color-scheme: dark)">
+        <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
+        <link rel="icon" href="appicon.png">
+        <link rel="apple-touch-icon" href="appicon.png">
+
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="crossorigin">
+        <link
+            rel="stylesheet"
+            as="style"
+            crossorigin="crossorigin"
+            href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+
+        <!-- 테마 선적용 (깜빡임 방지) -->
+        <script>
+            document.documentElement.dataset.theme = localStorage.theme || (
+                matchMedia('(prefers-color-scheme: light)').matches
+                    ? 'light'
+                    : 'dark'
+            );
+        </script>
+
+        <style>
+            /* index.html과 같은 토큰. 한쪽을 바꾸면 다른 쪽도 바꿔야 한다. */
+            :root {
+                --bg: #16171b;
+                --fg: #e5e3df;
+                --muted: #9ea19f;
+                --line: #33363e;
+                --accent: #a4cdea;
+                --soft: #202228;
+            }
+
+            [data-theme="light"] {
+                --bg: #fbfaf8;
+                --fg: #2b3038;
+                --muted: #626b76;
+                --line: #e0ddd5;
+                --accent: #2f6ba8;
+                --soft: #efece4;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html {
+                background: var(--bg);
+            }
+
+            body {
+                margin: 0;
+
+                /* 텍스트 선택·복사 차단 (모바일 롱프레스 메뉴 포함) */
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-touch-callout: none;
+
+                min-height: 100vh;
+
+                font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+                font-size: 15px;
+                font-weight: 400;
+                line-height: 1.75;
+
+                background: var(--bg);
+                color: var(--fg);
+
+                display: flex;
+                justify-content: center;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 640px;
+                padding: 24px 20px 48px;
+            }
+
+            .back {
+                display: inline-block;
+                margin-bottom: 20px;
+
+                color: var(--muted);
+                font-size: 13px;
+                text-decoration: none;
+            }
+
+            h1 {
+                margin: 0 0 4px;
+                font-size: 24px;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+            }
+
+            .updated {
+                margin: 0 0 28px;
+                color: var(--muted);
+                font-size: 13px;
+            }
+
+            h2 {
+                margin: 30px 0 8px;
+                font-size: 16px;
+                font-weight: 600;
+            }
+
+            p {
+                margin: 0 0 12px;
+            }
+
+            ul {
+                margin: 0 0 12px;
+                padding-left: 20px;
+            }
+
+            li {
+                margin-bottom: 6px;
+            }
+
+            .callout {
+                margin: 0 0 12px;
+                padding: 14px 16px;
+
+                background: var(--soft);
+                border: 1px solid var(--line);
+                border-radius: 14px;
+            }
+
+            .callout p:last-child {
+                margin-bottom: 0;
+            }
+
+            a {
+                color: var(--accent);
+            }
+
+            .footer {
+                margin-top: 40px;
+                padding-top: 20px;
+
+                border-top: 1px solid var(--line);
+
+                color: var(--muted);
+                font-size: 11px;
+                text-align: center;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <main class="container">
+
+            <a class="back" href="index.html">← BeardyLog</a>
+
+            <h1>개인정보처리방침</h1>
+            <p class="updated">시행일 2026년 8월 29일</p>
+
+            <p>
+                BeardyLog(이하 “앱”)는 도마뱀 사육 기록을 남기는 앱입니다. 이 방침은 앱이 어떤 정보를 다루는지 설명합니다.
+            </p>
+
+            <div class="callout">
+                <p>
+                    <b>앱은 회원가입이 없고, 개발자가 운영하는 서버도 없습니다.</b>
+                    개체 프로필·식단·몸무게·브리딩 기록과 사진은 모두 사용자의 기기 안에만 저장되며,
+                    개발자는 그 내용을 볼 수 없습니다.
+                </p>
+            </div>
+
+            <h2>1. 기기에 저장되는 정보</h2>
+            <p>
+                아래 정보는 사용자가 직접 입력한 것으로, 기기 내부 저장소에만 보관됩니다.
+            </p>
+            <ul>
+                <li>개체 정보 — 이름, 종, 모프, 성별, 해칭(입양)일, 사진</li>
+                <li>관리 기록 — 식단 및 일정, 몸무게, 달력 메모</li>
+                <li>브리딩 기록 — 메이팅 날짜, 클러치, 산란·해칭 정보</li>
+                <li>추억공간 — 떠난 날짜, 추억 메모, 사진</li>
+            </ul>
+
+            <h2>2. Google Drive 백업 (선택)</h2>
+            <p>
+                사용자가 설정에서 직접 실행할 때만 동작합니다. 백업하지 않으면 어떤 데이터도 기기 밖으로 나가지 않습니다.
+            </p>
+            <ul>
+                <li>
+                    앱은 <b>앱 전용 폴더 권한(drive.appdata)</b>만 요청합니다.
+                    이 권한으로는 사용자의 다른 Google Drive 파일을 조회하거나 수정할 수 없습니다.
+                </li>
+                <li>
+                    백업 파일(기록과 사진을 묶은 ZIP)은 <b>사용자 본인의 Google 계정</b>에만 저장됩니다.
+                    개발자는 이 파일에 접근할 수 없습니다.
+                </li>
+                <li>
+                    백업 삭제는 앱에서 덮어쓰거나, Google 계정 설정의 앱 데이터 관리에서 할 수 있습니다.
+                </li>
+            </ul>
+
+            <h2>3. 앱이 통신하는 곳</h2>
+            <ul>
+                <li>
+                    <b>Google Drive API</b> — 백업과 복원을 실행할 때만 사용합니다.
+                </li>
+                <li>
+                    <b>GitHub</b> — 새 버전이 있는지 확인합니다. 개인정보는 전송하지 않습니다.
+                </li>
+                <li>
+                    <b>한국천문연구원 특일 정보 서비스</b> — 달력에 공휴일을 표시하기 위해 날짜 정보만 요청합니다.
+                    개인정보는 전송하지 않습니다.
+                </li>
+            </ul>
+
+            <h2>4. 사용 통계와 오류 보고</h2>
+            <p>
+                앱의 안정성을 개선하기 위해 Google Firebase의 Analytics와 Crashlytics를 사용합니다.
+                여기에는 익명 식별자, 기기 모델, OS 버전, 대략적인 지역, 앱 사용 및 오류 정보가 포함됩니다.
+            </p>
+            <p>
+                <b>사용자가 입력한 기록이나 사진은 전송되지 않습니다.</b>
+                수집된 정보는 개인을 식별하는 데 사용되지 않으며, 제3자에게 판매하거나 광고에 활용하지 않습니다.
+            </p>
+
+            <h2>5. 앱이 요구하는 권한</h2>
+            <ul>
+                <li><b>인터넷</b> — 백업, 업데이트 확인, 공휴일 조회</li>
+                <li><b>앱 설치 요청</b> — 앱 안에서 새 버전을 설치할 때</li>
+            </ul>
+            <p>
+                위치, 연락처, 마이크 권한은 요구하지 않습니다. 사진은 시스템 선택기를 통해
+                사용자가 고른 파일만 앱으로 들어옵니다.
+            </p>
+
+            <h2>6. 보관과 삭제</h2>
+            <p>
+                기기의 기록은 앱을 삭제하면 함께 지워집니다. Google Drive에 올린 백업은 앱 삭제와 무관하게 남으므로,
+                필요하면 Google 계정 설정에서 따로 삭제해 주세요.
+            </p>
+
+            <h2>7. 만 14세 미만 이용자</h2>
+            <p>
+                앱은 별도의 계정이나 개인정보를 수집하지 않지만, 만 14세 미만은 보호자의 동의 아래 이용하시기 바랍니다.
+            </p>
+
+            <h2>8. 방침 변경</h2>
+            <p>
+                내용이 바뀌면 이 페이지를 갱신하고 상단의 시행일을 수정합니다.
+            </p>
+
+            <h2>9. 문의</h2>
+            <p>
+                <a href="https://open.kakao.com/o/sriHlIKh" target="_blank" rel="noopener noreferrer">카카오톡 오픈채팅</a>으로 문의해 주세요.
+            </p>
+
+            <footer class="footer">
+                © 2026 비어디월드
+            </footer>
+
+        </main>
+
+    </body>
+</html>
