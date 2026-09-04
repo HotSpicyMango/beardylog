@@ -967,9 +967,10 @@ internal class BreedingSection(private val activity: MainActivity) {
     private fun reptilePhotoUri(reptileId: Long?): String? =
         reptileId?.let { id -> activity.allReptiles.firstOrNull { it.id == id }?.photoUri }
 
+    /** 요구사항: 디데이는 0일이 아니라 1일부터 시작한다 — 짝짓기/산란 당일이 "D+1". */
     private fun formatDDay(epochDay: Long): String {
         val days = LocalDate.now().toEpochDay() - epochDay
-        return if (days >= 0) "D+$days" else "D-${-days}"
+        return if (days >= 0) "D+${days + 1}" else "D-${-days}"
     }
 
     private fun formatTemp(temp: Double?): String {

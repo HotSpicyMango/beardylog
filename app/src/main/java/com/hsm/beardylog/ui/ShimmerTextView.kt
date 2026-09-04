@@ -26,11 +26,12 @@ class ShimmerTextView @JvmOverloads constructor(
         if (width <= 0 || height <= 0) return
 
         val baseColor = currentTextColor
-        val highlightColor = if (ColorUtils.calculateLuminance(baseColor) > 0.5) {
-            ColorUtils.blendARGB(baseColor, Color.rgb(139, 201, 232), 0.8f)
-        } else {
-            ColorUtils.blendARGB(baseColor, Color.WHITE, 0.88f)
-        }
+        // 밝은 톤(다크 모드 강조색 등)에서는 고정된 하이라이트 색이 기본 색과 거의 같아져
+        // 애니메이션이 안 보일 수 있으므로, 밝기(HSL Lightness)를 실제로 끌어올려 대비를 만든다.
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(baseColor, hsl)
+        hsl[2] = (hsl[2] + 0.35f).coerceAtMost(1f)
+        val highlightColor = ColorUtils.setAlphaComponent(ColorUtils.HSLToColor(hsl), Color.alpha(baseColor))
         shimmerShader = LinearGradient(
             0f,
             height.toFloat(),

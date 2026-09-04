@@ -199,9 +199,8 @@ internal class CalendarSection(private val activity: MainActivity) {
         })
         addView(TextView(context).apply {
             text = "날짜를 선택해 확인하고, 길게 눌러 기록하세요"
-            textSize = 12f
+            textSize = 14f
             setTextColor(resColor(R.color.text_secondary))
-            alpha = 0.72f
             setPadding(0, dp(4), 0, 0)
         }, LinearLayout.LayoutParams(match, wrap))
         addView(LinearLayout(context).apply {

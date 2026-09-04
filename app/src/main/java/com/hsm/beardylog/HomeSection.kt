@@ -276,10 +276,6 @@ internal class HomeSection(private val activity: MainActivity) {
 
     private fun setupActions() {
         activity.binding.currentDate.text = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
-        activity.binding.badge.setOnClickListener { view ->
-            view.clickHaptic()
-            activity.showBriefToast("베타테스트에 참여해 주셔서 감사합니다.")
-        }
         activity.binding.selectedProfileDetailButton.setOnClickListener { view ->
             view.confirmHaptic()
             activity.selectedReptileId?.let(::openDetail)

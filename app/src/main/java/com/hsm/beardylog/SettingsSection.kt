@@ -39,6 +39,7 @@ import com.hsm.beardylog.data.GitHubUpdateChecker
 import com.hsm.beardylog.data.ProfileBackupManager
 import com.hsm.beardylog.data.WeightChartPeriod
 import com.hsm.beardylog.data.WeightChartPreferences
+import com.hsm.beardylog.notification.NotificationSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -149,6 +150,8 @@ internal class SettingsSection(private val activity: MainActivity) {
         content.addView(themeSettingsCard())
         content.addView(settingsSectionTitle("홈 화면"))
         content.addView(homeSettingsCard())
+        content.addView(settingsSectionTitle("알림"))
+        content.addView(notificationSettingsCard())
         content.addView(settingsSectionTitle("백업 및 복원"))
         content.addView(backupSettingsCard())
         content.addView(settingsSectionTitle("업데이트"))
@@ -389,6 +392,53 @@ internal class SettingsSection(private val activity: MainActivity) {
         ))
     }
 
+    private val notificationSettings: NotificationSettings
+        get() = activity.notificationSettings
+
+    private fun notificationSettingsCard(): View = settingsCard {
+        addView(settingRow(
+            title = "오늘의 일정 알림",
+            subtitle = "캘린더에 등록된 당일 관리 일정을 하루 한 번 알려줍니다",
+            trailing = SwitchMaterial(context).apply {
+                applyThemeColors()
+                isChecked = notificationSettings.dailyScheduleEnabled
+                setOnCheckedChangeListener { button, checked ->
+                    button.selectionHaptic()
+                    notificationSettings.dailyScheduleEnabled = checked
+                    activity.showBriefToast(if (checked) "일정 알림을 켰습니다" else "일정 알림을 껐습니다")
+                }
+            }
+        ))
+        addAppInfoDivider()
+        addView(settingRow(
+            title = "오늘의 식단 알림",
+            subtitle = "개체별 당일 식단을 하루 한 번 알려줍니다",
+            trailing = SwitchMaterial(context).apply {
+                applyThemeColors()
+                isChecked = notificationSettings.dailyDietEnabled
+                setOnCheckedChangeListener { button, checked ->
+                    button.selectionHaptic()
+                    notificationSettings.dailyDietEnabled = checked
+                    activity.showBriefToast(if (checked) "식단 알림을 켰습니다" else "식단 알림을 껐습니다")
+                }
+            }
+        ))
+        addAppInfoDivider()
+        addView(settingRow(
+            title = "부화 임박 알림",
+            subtitle = "알(클러치)의 부화 예정일이 다가오면 알려줍니다",
+            trailing = SwitchMaterial(context).apply {
+                applyThemeColors()
+                isChecked = notificationSettings.breedingHatchDueEnabled
+                setOnCheckedChangeListener { button, checked ->
+                    button.selectionHaptic()
+                    notificationSettings.breedingHatchDueEnabled = checked
+                    activity.showBriefToast(if (checked) "부화 임박 알림을 켰습니다" else "부화 임박 알림을 껐습니다")
+                }
+            }
+        ))
+    }
+
     private fun backupSettingsCard(): View = settingsCard {
         addView(TextView(context).apply {
             text = "Google Drive"
@@ -409,6 +459,25 @@ internal class SettingsSection(private val activity: MainActivity) {
             setPadding(0, dp(8), 0, dp(12))
         }
         addView(driveBackupStatusText)
+        addView(View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(match, dp(4))
+        })
+        addView(settingRow(
+            title = "백업 경과 알림받기",
+            subtitle = "마지막 백업 후 오래 지나면 알려줍니다",
+            trailing = SwitchMaterial(context).apply {
+                applyThemeColors()
+                isChecked = notificationSettings.driveBackupOverdueEnabled
+                setOnCheckedChangeListener { button, checked ->
+                    button.selectionHaptic()
+                    notificationSettings.driveBackupOverdueEnabled = checked
+                    activity.showBriefToast(if (checked) "백업 경과 알림을 켰습니다" else "백업 경과 알림을 껐습니다")
+                }
+            }
+        ))
+        addView(View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(match, dp(8))
+        })
         driveEmptyStateHintText = TextView(context).apply {
             text = "재설치한 경우 백업을 누르지 말고 먼저 Google Drive에서 복원하세요"
             textSize = 13f

@@ -1,5 +1,9 @@
 package com.hsm.beardylog
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -7,11 +11,13 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.hsm.beardylog.data.AppDatabase
 import com.hsm.beardylog.data.Reptile
 import com.hsm.beardylog.data.ReptileRepository
 import com.hsm.beardylog.data.WeightChartPreferences
+import com.hsm.beardylog.notification.NotificationSettings
 import com.hsm.beardylog.databinding.ActivityMainBinding
 import com.hsm.beardylog.viewmodel.ReptileViewModel
 import com.hsm.beardylog.viewmodel.ReptileViewModelFactory
@@ -31,6 +37,7 @@ class MainActivity : AppBaseActivity() {
     internal var selectedReptileId: Long? = null
     internal lateinit var database: AppDatabase
     internal lateinit var appSettings: AppSettings
+    internal lateinit var notificationSettings: NotificationSettings
     private lateinit var mainColumn: LinearLayout
     private lateinit var homeContent: View
     internal var currentTopContent: View? = null
@@ -44,6 +51,9 @@ class MainActivity : AppBaseActivity() {
     ) { result ->
         settingsSection.handleDriveAuthorizationResult(result)
     }
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* 거부해도 앱은 정상 동작하고, 알림만 안 뜬다. 별도 안내 없이 넘어간다. */ }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -57,6 +67,31 @@ class MainActivity : AppBaseActivity() {
         if (isUpdateCheckEnabled()) settingsSection.checkForUpdate()
         settingsSection.showPendingThemeTransition()
         observeProfiles()
+        requestNotificationPermissionIfNeeded()
+        handleNotificationIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    /** 알림을 탭해 앱을 열었을 때, 그 알림 종류와 관련된 탭으로 바로 이동시킨다. */
+    private fun handleNotificationIntent(intent: Intent) {
+        if (!::binding.isInitialized) return
+        val sectionName = intent.getStringExtra(EXTRA_OPEN_SECTION) ?: return
+        intent.removeExtra(EXTRA_OPEN_SECTION)
+        val section = runCatching { MainSection.valueOf(sectionName) }.getOrNull() ?: return
+        binding.bottomNavigation.selectedItemId = menuIdForSection(section)
+    }
+
+    /** Android 13(API 33) 미만에는 이 권한 자체가 없다. 이미 허용돼 있으면 다시 묻지 않는다. */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private fun setupRootContent() {
@@ -84,6 +119,7 @@ class MainActivity : AppBaseActivity() {
         breedingSection.setup()
         settingsSection.setup()
         appSettings = AppSettings(this)
+        notificationSettings = NotificationSettings(this)
         viewModel = ViewModelProvider(this, ReptileViewModelFactory(ReptileRepository(database.reptileDao())))[ReptileViewModel::class.java]
     }
 
@@ -256,5 +292,7 @@ class MainActivity : AppBaseActivity() {
     companion object {
         private const val KEY_CURRENT_SECTION = "current_section"
         private const val KEY_SETTINGS_SCROLL_Y = "settings_scroll_y"
+        /** 알림을 탭했을 때 어느 탭으로 이동할지 알려주는 인텐트 엑스트라 (MainSection.name 값). */
+        internal const val EXTRA_OPEN_SECTION = "open_section"
     }
 }

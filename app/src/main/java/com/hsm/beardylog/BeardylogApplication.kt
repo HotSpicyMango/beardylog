@@ -4,6 +4,8 @@ import android.app.Application
 import android.util.Log
 import com.hsm.beardylog.data.AppDatabase
 import com.hsm.beardylog.data.PhotoStore
+import com.hsm.beardylog.notification.AppNotificationChannel
+import com.hsm.beardylog.notification.NotificationScheduler
 import kotlin.concurrent.thread
 
 /**
@@ -25,6 +27,8 @@ class BeardylogApplication : Application() {
                 previousHandler?.uncaughtException(thread, throwable)
             }
         }
+        AppNotificationChannel.ensureCreated(this)
+        NotificationScheduler.scheduleIfNeeded(this)
         // 사진 파일은 DB 행이 사라져도 디스크에 남는다. 시작할 때 한 번 훑어서 정리한다.
         thread(isDaemon = true) {
             runCatching { PhotoStore.deleteOrphans(this, AppDatabase.getInstance(this)) }
