@@ -370,7 +370,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 cellIcons.forEach { iconRes ->
                     addView(ImageView(context).apply {
                         setImageResource(iconRes)
-                        imageTintList = ColorStateList.valueOf(if (date == LocalDate.now()) Color.WHITE else resColor(R.color.forest))
+                        imageTintList = ColorStateList.valueOf(if (date == LocalDate.now()) resColor(R.color.button_on_primary) else resColor(R.color.forest))
                         scaleType = ImageView.ScaleType.CENTER_INSIDE
                         contentDescription = null
                     }, android.widget.GridLayout.LayoutParams().apply {
@@ -402,10 +402,10 @@ internal class CalendarSection(private val activity: MainActivity) {
             else -> R.drawable.bg_calendar_day_cell
         })
         (cell.getChildAt(0) as? TextView)?.setTextColor(when {
-            isSelected -> Color.WHITE
+            isSelected -> resColor(R.color.button_on_primary)
             else -> calendarDateTextColor(date)
         })
-        updateCalendarCellIndicators(cell, if (isSelected) Color.WHITE else resColor(R.color.forest))
+        updateCalendarCellIndicators(cell, if (isSelected) resColor(R.color.button_on_primary) else resColor(R.color.forest))
     }
 
     private fun calendarDateTextColor(date: LocalDate): Int = when {

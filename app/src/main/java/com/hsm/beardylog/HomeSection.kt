@@ -1,7 +1,6 @@
 package com.hsm.beardylog
 
 import android.content.Intent
-import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import android.widget.AdapterView
@@ -88,7 +87,7 @@ internal class HomeSection(private val activity: MainActivity) {
                     text = "${dayLabels[index]}\n-"
                     textSize = 11f
                     setPadding(0, 0, 0, dp(6))
-                    setTextColor(if (date == today) Color.WHITE else activity.appColor(R.color.text_secondary))
+                    setTextColor(if (date == today) activity.appColor(R.color.button_on_primary) else activity.appColor(R.color.text_secondary))
                     setBackgroundResource(if (date == today) R.drawable.bg_home_week_day_selected else R.drawable.bg_week_day)
                 }, android.widget.LinearLayout.LayoutParams(0, dp(64), 1f).apply {
                     setMargins(dp(2), 0, dp(2), weekCellBottomSpace)
@@ -128,7 +127,7 @@ internal class HomeSection(private val activity: MainActivity) {
                 text = "${dayLabels[index]}\n${if (daySchedules.isEmpty()) "-" else daySchedules.joinToString("\n") { it.careType }}"
                 textSize = 11f
                 setPadding(0, 0, 0, dp(6))
-                setTextColor(if (date == LocalDate.now()) Color.WHITE else activity.appColor(R.color.text_secondary))
+                setTextColor(if (date == LocalDate.now()) activity.appColor(R.color.button_on_primary) else activity.appColor(R.color.text_secondary))
                 setBackgroundResource(if (date == LocalDate.now()) R.drawable.bg_home_week_day_selected else R.drawable.bg_week_day)
             }, android.widget.LinearLayout.LayoutParams(0, weekCellHeight, 1f).apply {
                 setMargins(dp(2), 0, dp(2), weekCellBottomSpace)

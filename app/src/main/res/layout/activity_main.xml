@@ -44,6 +44,6 @@
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
-        <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/bottomNavigation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:background="?attr/beardySurface" app:menu="@menu/bottom_navigation" app:labelVisibilityMode="labeled" app:itemIconTint="@color/bottom_nav_tint" app:itemTextColor="@color/bottom_nav_tint" />
+        <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/bottomNavigation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:background="@drawable/bg_bottom_nav" android:elevation="8dp" app:menu="@menu/bottom_navigation" app:labelVisibilityMode="labeled" app:itemIconTint="@color/bottom_nav_tint" app:itemTextColor="@color/bottom_nav_tint" />
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

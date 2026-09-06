@@ -33,6 +33,7 @@ import com.google.android.gms.common.api.Scope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import io.noties.markwon.Markwon
 import com.bumptech.glide.Glide
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hsm.beardylog.data.GitHubUpdateChecker
@@ -801,15 +802,15 @@ internal class SettingsSection(private val activity: MainActivity) {
         addAppInfoDivider()
         addView(infoRow("버전", "${info.versionName ?: "-"} (${versionCode(info)})", compact = true))
         addAppInfoDivider()
-        addView(infoRow("제작", "M.G OH, J.H BAE", compact = true))
+        addView(infoRow("제작", "M.G OH · J.H BAE", compact = true))
         addAppInfoDivider()
         addView(TextView(activity).apply {
             text = "\"우리는 모두 마음 한켠에 조그만 생명이 주고 간 다정함을 품고 살아갑니다.\""
-            textSize = 9f
+            textSize = 10.5f
             gravity = Gravity.CENTER
-            setTypeface(typeface, android.graphics.Typeface.ITALIC)
+            setTypeface(typeface, android.graphics.Typeface.NORMAL)
             setTextColor(resColor(R.color.text_secondary))
-            setPadding(dp(5), dp(12), dp(5), dp(12))
+            setPadding(dp(0), dp(12), dp(0), dp(12))
         })
     }
 
@@ -933,7 +934,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
         MaterialAlertDialogBuilder(activity)
             .setTitle("업데이트 가능")
-            .setMessage(message)
+            .setMessage(Markwon.create(activity).toMarkdown(message))
             .setPositiveButton("다운로드") { _, _ -> startApkDownload(release) }
             .setNegativeButton("나중에", null)
             .show()

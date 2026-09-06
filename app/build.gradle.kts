@@ -30,9 +30,9 @@ android {
         applicationId = "com.hsm.beardylog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 14
-        versionName = "0.1.2"
-//      9/4
+        versionCode = 16
+        versionName = "1.0.0"
+//      9/6
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KOREA_HOLIDAY_API_KEY", "\"${localProperties.getProperty("KOREA_HOLIDAY_API_KEY", "")}\"")
@@ -80,4 +80,5 @@ dependencies {
     // 베타 테스터가 겪은 크래시를 볼 방법이 없으면 무엇을 먼저 고쳐야 하는지 추측만 하게 된다.
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("io.noties.markwon:core:4.6.2")
 }

@@ -4,12 +4,12 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Static fallbacks for non-themed contexts and previews. -->
-    <color name="forest">#2F739F</color>
-    <color name="button_primary">#2F739F</color>
+    <color name="forest">#234059</color>
+    <color name="button_primary">#234059</color>
     <color name="button_on_primary">#FFFFFFFF</color>
-    <color name="forest_light">#DCEFF8</color>
-    <color name="surface_alt">#F4F9FC</color>
-    <color name="surface_card">#FFFFFFFF</color>
+    <color name="forest_light">#DCEBF8</color>
+    <color name="surface_alt">#F2EADF</color>
+    <color name="surface_card">#F9F8F6</color>
     <color name="text_primary">#15232B</color>
     <color name="text_secondary">#5E707A</color>
     <color name="danger">#BA1A1A</color>
@@ -19,11 +19,12 @@
     <color name="palette_on_button">#FFFFFFFF</color>
     <color name="palette_danger">#BA1A1A</color>
 
-    <color name="palette_ocean_accent">#2F739F</color>
-    <color name="palette_ocean_container">#DCEFF8</color>
-    <color name="palette_ocean_background">#F4F9FC</color>
-    <color name="palette_ocean_surface">#FFFFFFFF</color>
-    <color name="palette_ocean_button">#2F739F</color>
+    <color name="palette_ocean_accent">#234059</color>
+    <color name="palette_ocean_container">#DCEBF8</color>
+    <color name="palette_ocean_background">#F2EADF</color>
+    <color name="palette_ocean_surface">#F9F8F6</color>
+    <color name="palette_ocean_button">#234059</color>
+    <color name="palette_ocean_on_button">#F2EADF</color>
 
     <color name="palette_forest_accent">#3F7652</color>
     <color name="palette_forest_container">#DCEEDD</color>

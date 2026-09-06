@@ -30,6 +30,10 @@
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
     </style>
 
+    <style name="Theme.Beardylog" parent="Base.Theme.Beardylog">
+        <item name="beardyOnButtonPrimary">@color/palette_ocean_on_button</item>
+    </style>
+
     <style name="TextAppearance.Beardylog.WeightNumber" parent="TextAppearance.Material3.BodyLarge">
         <item name="fontFamily">@font/d2</item>
         <item name="android:fontFamily">@font/d2</item>

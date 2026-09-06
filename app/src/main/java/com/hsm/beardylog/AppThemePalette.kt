@@ -16,43 +16,43 @@ enum class AppThemePalette(
 ) {
     OCEAN(
         preferenceKey = "ocean",
-        displayName = "블루",
-        description = "블루트리모니터",
+        displayName = "기본",
+        description = "기본 색",
         styleRes = R.style.Theme_Beardylog,
         previewColorRes = R.color.palette_ocean_accent
     ),
     FOREST(
         preferenceKey = "forest",
         displayName = "그린",
-        description = "데이게코",
+        description = "Forest Green",
         styleRes = R.style.Theme_Beardylog_Forest,
         previewColorRes = R.color.palette_forest_accent
     ),
     LAVENDER(
         preferenceKey = "lavender",
         displayName = "퍼플",
-        description = "그레이프",
+        description = "Lavender",
         styleRes = R.style.Theme_Beardylog_Lavender,
         previewColorRes = R.color.palette_lavender_accent
     ),
     ROSE(
         preferenceKey = "rose",
         displayName = "핑크",
-        description = "로즈",
+        description = "Rose Pink",
         styleRes = R.style.Theme_Beardylog_Rose,
         previewColorRes = R.color.palette_rose_accent
     ),
     CORAL(
         preferenceKey = "coral",
         displayName = "오렌지",
-        description = "레오파드게코",
+        description = "Coral",
         styleRes = R.style.Theme_Beardylog_Coral,
         previewColorRes = R.color.palette_coral_accent
     ),
     SLATE(
         preferenceKey = "slate",
         displayName = "그레이",
-        description = "실버텅스킨크",
+        description = "Slate",
         styleRes = R.style.Theme_Beardylog_Slate,
         previewColorRes = R.color.palette_slate_accent
     );
