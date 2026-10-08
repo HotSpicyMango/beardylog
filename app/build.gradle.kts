@@ -30,8 +30,8 @@ android {
         applicationId = "com.hsm.beardylog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 20
-        versionName = "1.1.0"
+        versionCode = 22
+        versionName = "1.1.2"
 //      10/8
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

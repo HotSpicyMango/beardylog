@@ -9,7 +9,7 @@ import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.io.File;
 
-@Database(entities = {Reptile.class, WeightRecord.class, CareSchedule.class, CareLog.class, BreedingRecord.class, MemorialPhoto.class, BreedingPair.class, Clutch.class, Hatchling.class}, version = 9, exportSchema = false)
+@Database(entities = {Reptile.class, WeightRecord.class, CareSchedule.class, CareLog.class, BreedingRecord.class, MemorialPhoto.class, BreedingPair.class, Clutch.class, Hatchling.class}, version = 10, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract ReptileDao reptileDao();
     public abstract WeightRecordDao weightRecordDao();
@@ -24,7 +24,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public static AppDatabase getInstance(Context context) {
         if (instance == null) synchronized (AppDatabase.class) {
             if (instance == null) instance = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, "beardylog.db")
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                     // 구버전 APK를 사이드로드하면 저장된 DB 버전이 코드보다 높아 Room이 예외를 던지고
                     // 앱이 영영 켜지지 않는다. 강등은 데이터를 살릴 방법이 없으므로 초기화로 떨어뜨린다.
                     .fallbackToDestructiveMigrationOnDowngrade(true)
@@ -87,6 +87,13 @@ public abstract class AppDatabase extends RoomDatabase {
             database.execSQL("CREATE INDEX IF NOT EXISTS `index_clutches_pairId` ON `clutches` (`pairId`)");
             database.execSQL("CREATE TABLE IF NOT EXISTS `hatchlings` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clutchId` INTEGER NOT NULL, `normalCount` INTEGER NOT NULL, `deathCount` INTEGER NOT NULL, `disabledCount` INTEGER NOT NULL, `disabledReason` TEXT, `midDropCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`clutchId`) REFERENCES `clutches`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
             database.execSQL("CREATE INDEX IF NOT EXISTS `index_hatchlings_clutchId` ON `hatchlings` (`clutchId`)");
+        }
+    };
+
+    private static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override public void migrate(SupportSQLiteDatabase database) {
+            // 클러치 디데이 종료일. 기존 클러치는 NULL(진행 중)로 남는다.
+            database.execSQL("ALTER TABLE `clutches` ADD COLUMN `ddayEndDate` INTEGER");
         }
     };
 

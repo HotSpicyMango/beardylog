@@ -199,7 +199,8 @@ internal class BreedingSection(private val activity: MainActivity) {
             text = buildString {
                 append("메이팅 ${LocalDate.ofEpochDay(pair.matingDate).format(shortDateFormatter)}")
                 pairClutches.sortedBy { it.clutchNumber }.forEach { clutch ->
-                    append(" · ${clutch.clutchNumber}차 ${formatDDay(clutch.layingDate)}")
+                    append(" · ${clutch.clutchNumber}차 ${formatDDay(clutch.layingDate, clutch.ddayEndDate)}")
+                    if (clutch.ddayEndDate != null) append("(종료)")
                 }
             }
             textSize = 12f
@@ -455,11 +456,12 @@ internal class BreedingSection(private val activity: MainActivity) {
                 setTypeface(typeface, Typeface.BOLD)
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
+            val ended = clutch.ddayEndDate != null
             addView(TextView(context).apply {
-                text = formatDDay(clutch.layingDate)
+                text = formatDDay(clutch.layingDate, clutch.ddayEndDate) + if (ended) " · 종료" else ""
                 textSize = 15f
                 setTypeface(typeface, Typeface.BOLD)
-                setTextColor(resColor(R.color.forest))
+                setTextColor(resColor(if (ended) R.color.text_secondary else R.color.forest))
             })
         })
         column.addView(TextView(activity).apply {
@@ -468,6 +470,14 @@ internal class BreedingSection(private val activity: MainActivity) {
             setTextColor(resColor(R.color.text_secondary))
             setPadding(0, dp(6), 0, 0)
         })
+        clutch.ddayEndDate?.let { endDate ->
+            column.addView(TextView(activity).apply {
+                text = "디데이 종료 · ${LocalDate.ofEpochDay(endDate).format(dateFormatter)}"
+                textSize = 13f
+                setTextColor(resColor(R.color.text_secondary))
+                setPadding(0, dp(2), 0, 0)
+            })
+        }
         column.addView(TextView(activity).apply {
             text = "인큐베이터 온도 · ${formatTemp(clutch.incubatorTemp)}"
             textSize = 13f
@@ -500,6 +510,25 @@ internal class BreedingSection(private val activity: MainActivity) {
             }
         })
         actionsRow.addView(MaterialButton(activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = if (clutch.ddayEndDate == null) "디데이 종료" else "다시 세기"
+            textSize = 12f
+            minWidth = 0
+            minimumWidth = 0
+            applyButtonHeight(BUTTON_HEIGHT_COMPACT_DP)
+            strokeWidth = dp(1)
+            strokeColor = ColorStateList.valueOf(resColor(R.color.forest))
+            setTextColor(resColor(R.color.forest))
+            backgroundTintList = ColorStateList.valueOf(resColor(R.color.surface_card))
+            setOnClickListener { view ->
+                view.clickHaptic()
+                if (clutch.ddayEndDate == null) {
+                    pickClutchDDayEndDate(clutch)
+                } else {
+                    setClutchDDayEnd(clutch, null, "디데이를 다시 셉니다")
+                }
+            }
+        }, LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = dp(8) })
+        actionsRow.addView(MaterialButton(activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "클러치 삭제"
             textSize = 12f
             minWidth = 0
@@ -514,6 +543,16 @@ internal class BreedingSection(private val activity: MainActivity) {
                 confirmDeleteClutch(clutch)
             }
         }, LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = dp(8) })
+        // 버튼이 3개라 Material 기본 좌우 여백(24dp)으로는 좁은 화면에서 마지막 버튼이 잘린다.
+        // 셋이 폭을 똑같이 나눠 갖고 여백을 줄여 한 줄에 들어가게 한다.
+        for (index in 0 until actionsRow.childCount) {
+            (actionsRow.getChildAt(index) as MaterialButton).apply {
+                setPadding(dp(6), paddingTop, dp(6), paddingBottom)
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                layoutParams = LinearLayout.LayoutParams(0, wrap, 1f).apply { if (index > 0) marginStart = dp(8) }
+            }
+        }
         column.addView(actionsRow)
 
         val clutchHatchlings = hatchlingsFor(clutch.id)
@@ -790,6 +829,7 @@ internal class BreedingSection(private val activity: MainActivity) {
                     }.onSuccess {
                         activity.showBriefToast("해츨링 기록을 추가했습니다")
                         dialog.dismiss()
+                        if (clutch.ddayEndDate == null) confirmEndDDayAfterHatching(clutch)
                     }.onFailure {
                         button.isEnabled = true
                         activity.showBriefToast("추가하지 못했습니다")
@@ -800,6 +840,54 @@ internal class BreedingSection(private val activity: MainActivity) {
         matchSystemBarsToActivity(dialog.window)
         dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_rounded)
         dialog.show()
+    }
+
+    /** 부화했으면 디데이를 셀 필요가 없으니, 해츨링을 기록한 김에 종료할지 묻는다. */
+    private fun confirmEndDDayAfterHatching(clutch: Clutch) {
+        val dialog = MaterialAlertDialogBuilder(activity)
+            .setTitle("디데이 종료")
+            .setMessage("${clutch.clutchNumber}차 클러치의 디데이도 종료할까요? 오늘 기준으로 멈추고 더 이상 세지 않아요.")
+            .setNegativeButton("계속 세기", null)
+            .setPositiveButton("종료") { _, _ ->
+                setClutchDDayEnd(clutch, maxOf(LocalDate.now().toEpochDay(), clutch.layingDate), "디데이를 종료했습니다")
+            }
+            .show()
+        matchSystemBarsToActivity(dialog.window)
+        dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_rounded)
+    }
+
+    /** 실제 부화일을 늦게 기록하는 경우가 있어 종료일을 고르게 한다(산란일 ~ 오늘, 기본값 오늘). */
+    private fun pickClutchDDayEndDate(clutch: Clutch) {
+        val today = LocalDate.now()
+        val layingDate = LocalDate.ofEpochDay(clutch.layingDate)
+        val initial = if (layingDate.isAfter(today)) layingDate else today
+        val pickerDialog = DatePickerDialog(activity, { _, year, month, day ->
+            setClutchDDayEnd(clutch, LocalDate.of(year, month + 1, day).toEpochDay(), "디데이를 종료했습니다")
+        }, initial.year, initial.monthValue - 1, initial.dayOfMonth)
+        val zone = java.time.ZoneId.systemDefault()
+        pickerDialog.datePicker.minDate = layingDate.atStartOfDay(zone).toInstant().toEpochMilli()
+        pickerDialog.datePicker.maxDate = maxOf(System.currentTimeMillis(), pickerDialog.datePicker.minDate)
+        pickerDialog.setTitle("디데이 종료일 선택")
+        matchSystemBarsToActivity(pickerDialog.window)
+        pickerDialog.show()
+    }
+
+    /** [endDate]가 null이면 다시 세기. 화면은 clutches LiveData가 갱신한다. */
+    private fun setClutchDDayEnd(clutch: Clutch, endDate: Long?, doneMessage: String) {
+        val previous = clutch.ddayEndDate
+        activity.lifecycleScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    activity.database.clutchDao().update(clutch.also { it.ddayEndDate = endDate })
+                }
+            }.onSuccess {
+                activity.showBriefToast(doneMessage)
+            }.onFailure {
+                // 화면에 그려진 객체를 그대로 고쳐서 저장하므로, 실패하면 원래 값으로 되돌려 화면과 DB가 어긋나지 않게 한다.
+                clutch.ddayEndDate = previous
+                activity.showBriefToast("저장하지 못했습니다")
+            }
+        }
     }
 
     private fun editMatingDate(pair: BreedingPair) {
@@ -958,8 +1046,9 @@ internal class BreedingSection(private val activity: MainActivity) {
         reptileId?.let { id -> activity.allReptiles.firstOrNull { it.id == id }?.photoUri }
 
     /** 요구사항: 디데이는 0일이 아니라 1일부터 시작한다 — 짝짓기/산란 당일이 "D+1". */
-    private fun formatDDay(epochDay: Long): String {
-        val days = LocalDate.now().toEpochDay() - epochDay
+    /** [endDate]가 있으면(디데이 종료) 오늘 대신 그날까지만 세서 값이 더 늘지 않는다. */
+    private fun formatDDay(epochDay: Long, endDate: Long? = null): String {
+        val days = (endDate ?: LocalDate.now().toEpochDay()) - epochDay
         return if (days >= 0) "D+${days + 1}" else "D-${-days}"
     }
 

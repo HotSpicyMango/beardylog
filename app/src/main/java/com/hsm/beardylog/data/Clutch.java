@@ -21,5 +21,7 @@ public class Clutch {
     public int fertileEggCount;
     public int lostEggCount;
     @Nullable public Double incubatorTemp;
+    /** 디데이를 종료한 날(epochDay). null이면 아직 진행 중이라 오늘까지 센다. 부화 후 더 셀 필요가 없을 때 사용자가 종료한다. */
+    @Nullable public Long ddayEndDate;
     public long createdAt;
 }

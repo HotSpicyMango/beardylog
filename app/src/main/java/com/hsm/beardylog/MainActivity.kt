@@ -204,6 +204,7 @@ class MainActivity : AppBaseActivity() {
         super.onResume()
         if (!::binding.isInitialized) return
         homeSection.onResume()
+        settingsSection.onResume()
         refreshSectionForNewDay()
         binding.weightPeriodLabel.text = WeightChartPreferences.homePeriod(this).displayName
         selectedReptileId?.let(::loadWeightHistory)

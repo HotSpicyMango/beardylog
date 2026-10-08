@@ -29,8 +29,10 @@ internal object HatchDueSoonNotifier {
         val today = LocalDate.now().toEpochDay()
         val notifiedStore = NotifiedClutchStore(context)
 
-        val alreadyHatchedClutchIds = database.hatchlingDao().all().map { it.clutchId }.toSet()
         val allClutches = database.clutchDao().all()
+        // 해츨링을 기록했거나 디데이를 종료한 클러치는 이미 부화가 끝난 것으로 보고 알림에서 뺀다.
+        val alreadyHatchedClutchIds = database.hatchlingDao().all().map { it.clutchId }.toSet() +
+            allClutches.filter { it.ddayEndDate != null }.map { it.id }
         notifiedStore.retainOnly(allClutches.map { it.id }.toSet() - alreadyHatchedClutchIds)
 
         val dueClutches = allClutches.filter { clutch ->

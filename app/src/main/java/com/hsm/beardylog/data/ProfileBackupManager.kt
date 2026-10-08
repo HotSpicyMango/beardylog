@@ -403,6 +403,7 @@ class ProfileBackupManager(
                     put("fertileEggCount", clutch.fertileEggCount)
                     put("lostEggCount", clutch.lostEggCount)
                     putNullable("incubatorTemp", clutch.incubatorTemp)
+                    putNullable("ddayEndDate", clutch.ddayEndDate)
                     put("createdAt", clutch.createdAt)
                 })
             }
@@ -531,6 +532,8 @@ class ProfileBackupManager(
                 fertileEggCount = value.optInt("fertileEggCount", 0)
                 lostEggCount = value.optInt("lostEggCount", 0)
                 incubatorTemp = value.nullableDouble("incubatorTemp")
+                // 예전 백업에는 없는 값이라 없으면 진행 중(null)으로 복원된다.
+                ddayEndDate = value.nullableLong("ddayEndDate")
                 createdAt = value.optLong("createdAt", backupCreatedAt)
             }
         }

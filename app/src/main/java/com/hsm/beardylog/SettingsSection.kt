@@ -74,7 +74,8 @@ internal class SettingsSection(private val activity: MainActivity) {
 
     private val gitHubUpdateChecker = GitHubUpdateChecker()
     private var pendingApkDownloadId: Long? = null
-    private var pendingApkFile: File? = null
+    /** 설치 권한 설정 화면으로 보낸 동안 기다리는 APK. 돌아왔을 때([onResume]) 권한이 켜졌으면 바로 설치를 이어간다. */
+    private var apkAwaitingInstallPermission: File? = null
     private var apkReceiverRegistered = false
     /** 복원 확인 다이얼로그가 떠 있는 동안 백업 임시 파일과 ZipFile 핸들을 들고 있는 미리보기.
      *  다이얼로그로 결론이 나면 그 자리에서 닫지만, 화면이 죽어 다이얼로그가 사라지는 경로는
@@ -1070,9 +1071,11 @@ internal class SettingsSection(private val activity: MainActivity) {
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalFilesDir(activity, null, release.assetName)
                 .setMimeType("application/vnd.android.package-archive")
-            val target = File(requireNotNull(activity.getExternalFilesDir(null)), release.assetName)
+            // 릴리즈 APK 이름이 매번 같아서(app-release.apk), 지난 업데이트 때 받은 파일이 남아 있으면
+            // DownloadManager가 새 파일을 app-release-1.apk로 저장하고 우리는 옛 파일을 설치하려다 실패했다.
+            // 받기 전에 남은 APK를 지워 이름이 겹치지 않게 한다.
+            deleteDownloadedApks()
             pendingApkDownloadId = downloadManager.enqueue(request)
-            pendingApkFile = target
             if (!apkReceiverRegistered) {
                 ContextCompat.registerReceiver(
                     activity,
@@ -1086,7 +1089,6 @@ internal class SettingsSection(private val activity: MainActivity) {
             activity.showBriefToast("업데이트 다운로드를 시작합니다")
         }.onFailure {
             pendingApkDownloadId = null
-            pendingApkFile = null
             runCatching {
                 activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.downloadUrl)))
             }.onFailure {
@@ -1097,17 +1099,17 @@ internal class SettingsSection(private val activity: MainActivity) {
 
     private fun handleApkDownloadComplete(downloadId: Long) {
         pendingApkDownloadId = null
-        val file = pendingApkFile
-        pendingApkFile = null
         val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val status = downloadManager.query(DownloadManager.Query().setFilterById(downloadId))?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                if (columnIndex >= 0) cursor.getInt(columnIndex) else null
-            } else {
-                null
-            }
-        }
+        // 파일 경로는 짐작하지 않고 DownloadManager가 실제로 저장한 위치를 읽는다.
+        val (status, file) = downloadManager.query(DownloadManager.Query().setFilterById(downloadId))?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            val status = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS).takeIf { it >= 0 }?.let(cursor::getInt)
+            val file = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI).takeIf { it >= 0 }
+                ?.let(cursor::getString)
+                ?.let { Uri.parse(it).path }
+                ?.let(::File)
+            status to file
+        } ?: (null to null)
         if (status != DownloadManager.STATUS_SUCCESSFUL || file == null || !file.exists()) {
             activity.showBriefToast("업데이트 다운로드에 실패했습니다")
             return
@@ -1119,10 +1121,11 @@ internal class SettingsSection(private val activity: MainActivity) {
         // Android 8부터 앱마다 '알 수 없는 앱 설치'를 사용자가 켜줘야 한다. 확인 없이 설치 화면을
         // 던지면 아무 설명 없이 막히기만 하므로, 꺼져 있으면 해당 설정으로 안내한다.
         if (!activity.packageManager.canRequestPackageInstalls()) {
+            apkAwaitingInstallPermission = file
             MaterialAlertDialogBuilder(activity)
                 .setTitle("설치 권한이 필요합니다")
                 .setMessage("업데이트를 설치하려면 BeardyLog에 '알 수 없는 앱 설치'를 허용해 주세요.")
-                .setNegativeButton("나중에", null)
+                .setNegativeButton("나중에") { _, _ -> apkAwaitingInstallPermission = null }
                 .setPositiveButton("설정 열기") { _, _ ->
                     runCatching {
                         activity.startActivity(
@@ -1144,6 +1147,21 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
         runCatching { activity.startActivity(installIntent) }
             .onFailure { activity.showBriefToast("설치 화면을 열지 못했습니다") }
+    }
+
+    /** MainActivity.onResume에서 호출. '알 수 없는 앱 설치'를 허용하고 돌아오면 다시 업데이트를 누르지 않아도 설치가 이어진다.
+     *  (예전에는 여기서 흐름이 끊겨, 처음 업데이트할 때는 항상 한 번 더 시도해야 했다) */
+    fun onResume() {
+        val file = apkAwaitingInstallPermission ?: return
+        if (!activity.packageManager.canRequestPackageInstalls()) return
+        apkAwaitingInstallPermission = null
+        if (file.exists()) installApk(file)
+    }
+
+    private fun deleteDownloadedApks() {
+        activity.getExternalFilesDir(null)
+            ?.listFiles { file -> file.extension.equals("apk", ignoreCase = true) }
+            ?.forEach { it.delete() }
     }
 
     // ---- 이 섹션 전용 소품 헬퍼 (MainActivity의 것과 동일한 구현을 그대로 둔다) ----
