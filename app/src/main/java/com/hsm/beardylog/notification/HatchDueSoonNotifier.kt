@@ -22,6 +22,9 @@ internal object HatchDueSoonNotifier {
     private const val HEADS_UP_DAYS_BEFORE = 3L
 
     fun notify(context: Context) {
+        // 권한이 없으면 아래에서 클러치를 "이미 알림" 처리만 해두고 실제 알림은 못 띄운다.
+        // 그러면 권한을 나중에 다시 켜도 그 클러치는 영영 알림을 못 받으므로, 상태를 건드리지 않고 끝낸다.
+        if (!hasNotificationPermission(context)) return
         val database = AppDatabase.getInstance(context)
         val today = LocalDate.now().toEpochDay()
         val notifiedStore = NotifiedClutchStore(context)

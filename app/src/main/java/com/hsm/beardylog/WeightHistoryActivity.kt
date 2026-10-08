@@ -160,7 +160,7 @@ class WeightHistoryActivity : AppBaseActivity() {
     private fun renderHistory() {
         binding.historyEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
         // 최신순으로 보여주므로 오름차순 기록을 뒤집어서 넘긴다. 어댑터는 DiffUtil로 실제 바뀐 카드만 갱신한다.
-        historyAdapter.submitList(records.asReversed())
+        historyAdapter.submitRecords(records.asReversed())
     }
 
     private fun showRecordSheet(editing: WeightRecord? = null) {

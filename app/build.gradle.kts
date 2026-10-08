@@ -30,9 +30,9 @@ android {
         applicationId = "com.hsm.beardylog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 16
-        versionName = "1.0.0"
-//      9/6
+        versionCode = 20
+        versionName = "1.1.0"
+//      10/8
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KOREA_HOLIDAY_API_KEY", "\"${localProperties.getProperty("KOREA_HOLIDAY_API_KEY", "")}\"")

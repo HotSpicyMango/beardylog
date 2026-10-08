@@ -242,16 +242,13 @@ class CareScheduleActivity : AppBaseActivity() {
         val actionColor = ColorStateList.valueOf(this@CareScheduleActivity.appColor(colorRes))
         minWidth = 0
         minimumWidth = 0
-        minHeight = dp(36)
-        minimumHeight = dp(36)
-        insetTop = 0
-        insetBottom = 0
+        applyButtonHeight(BUTTON_HEIGHT_COMPACT_DP)
         strokeWidth = dp(1)
         strokeColor = actionColor
         setTextColor(actionColor)
         backgroundTintList = ColorStateList.valueOf(this@CareScheduleActivity.appColor(R.color.surface_card))
         setPadding(dp(10), 0, dp(10), 0)
-        layoutParams = LinearLayout.LayoutParams(-2, dp(36)).apply {
+        layoutParams = LinearLayout.LayoutParams(-2, -2).apply {
             marginStart = dp(6)
         }
     }
@@ -279,6 +276,21 @@ class CareScheduleActivity : AppBaseActivity() {
     }
 
     private fun beginEdit(schedule: CareSchedule) {
+        // 다른 일정을 새로 작성하던 중에 목록에서 "수정"을 누르면, 확인 없이 그대로 폼을
+        // 덮어써서 작성 중이던 내용을 잃게 된다. requestClose()와 동일한 기준으로 한 번 확인한다.
+        if (hasUnsavedChanges()) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("변경 사항 취소")
+                .setMessage("작성 중인 내용이 있습니다. 취소하고 이 일정을 수정할까요?")
+                .setNegativeButton("계속 작성", null)
+                .setPositiveButton("수정하기") { _, _ -> applyEdit(schedule) }
+                .show()
+            return
+        }
+        applyEdit(schedule)
+    }
+
+    private fun applyEdit(schedule: CareSchedule) {
         editingScheduleId = schedule.id
         binding.saveButton.text = "일정 수정"
         binding.memoInput.setText(schedule.memo.orEmpty())

@@ -184,6 +184,9 @@ internal class CalendarSection(private val activity: MainActivity) {
                 setTypeface(typeface, Typeface.BOLD)
                 setTextColor(resColor(R.color.button_on_primary))
                 setBackgroundResource(R.drawable.bg_today_button)
+                // 고정 크기 대신 최소 크기로 두어, 시스템 글꼴을 키워도 숫자가 잘리지 않고 버튼이 커지게 한다
+                minWidth = dp(58)
+                minHeight = dp(38)
                 visibility = if (showTodayButton) View.VISIBLE else View.INVISIBLE
                 isClickable = showTodayButton
                 isFocusable = showTodayButton
@@ -194,7 +197,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                     calendarState.showToday()
                     activity.replaceTopContent(createCalendarContentView())
                 }
-            }, LinearLayout.LayoutParams(dp(58), dp(38)))
+            }, LinearLayout.LayoutParams(wrap, wrap))
             post { updateCalendarTodayButton() }
         })
         addView(TextView(context).apply {
@@ -663,6 +666,7 @@ internal class CalendarSection(private val activity: MainActivity) {
         })
         content.addView(MaterialButton(activity).apply {
             text = "저장"
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
             setTextColor(resColor(R.color.button_on_primary))
             backgroundTintList = ColorStateList.valueOf(resColor(R.color.button_primary))
             setOnClickListener { view ->
@@ -671,7 +675,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 returnToCalendarFromDetail(date, resetScroll = false)
                 showCalendarSavedSnackbar()
             }
-            layoutParams = LinearLayout.LayoutParams(match, dp(52)).apply { topMargin = dp(18) }
+            layoutParams = LinearLayout.LayoutParams(match, wrap).apply { topMargin = dp(18) }
         })
         val deleteButton = MaterialButton(activity).apply {
             text = "이 날짜 기록 전체 삭제"
@@ -679,7 +683,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
             strokeColor = ColorStateList.valueOf(resColor(R.color.danger))
             strokeWidth = dp(1)
-            cornerRadius = dp(12)
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
             setIconResource(R.drawable.ic_delete)
             iconTint = ColorStateList.valueOf(resColor(R.color.danger))
             setOnClickListener { view ->
@@ -687,7 +691,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 showDeleteCalendarDateDialog(date)
             }
         }
-        content.addView(deleteButton, LinearLayout.LayoutParams(match, dp(50)).apply { topMargin = dp(10) })
+        content.addView(deleteButton, LinearLayout.LayoutParams(match, wrap).apply { topMargin = dp(10) })
         val updateDeleteButtonState = {
             val hasContent = taskChecks.values.any(CheckBox::isChecked) ||
                 hospitalInput.text.isNotBlank() ||
@@ -803,16 +807,15 @@ internal class CalendarSection(private val activity: MainActivity) {
                 setTypeface(typeface, Typeface.BOLD)
                 setTextColor(resColor(R.color.surface_card))
                 setBackgroundResource(R.drawable.bg_calendar_feedback)
-                setPadding(dp(16), dp(12), dp(16), dp(12))
+                setPadding(dp(24), dp(12), dp(24), dp(12))
                 alpha = 0f
             }
-            val bottomNavHeight = activity.binding.bottomNavigation.height.takeIf { it > 0 } ?: dp(86)
+            val bottomNavHeight = activity.binding.bottomNavWrapper.height.takeIf { it > 0 } ?: dp(86)
             activity.binding.root.addView(
                 feedback,
-                androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(match, wrap).apply {
-                    gravity = Gravity.BOTTOM
-                    leftMargin = dp(20)
-                    rightMargin = dp(20)
+                androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(wrap, wrap).apply {
+                    // 하단바와 같은 알약형으로, 바 위 가운데에 띄운다
+                    gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
                     bottomMargin = bottomNavHeight + dp(12)
                 }
             )

@@ -28,7 +28,7 @@
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="무게 추이" android:textColor="?attr/beardyTextPrimary" android:textSize="17sp" android:textStyle="bold" />
                             <TextView android:id="@+id/currentWeight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/beardyAccent" android:textSize="14sp" />
-                            <TextView android:id="@+id/weightDetailButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:clickable="true" android:contentDescription="무게 기록 상세 보기" android:focusable="true" android:text="수정 / 상세 ›" android:textColor="?attr/beardyAccent" android:textSize="13sp" android:textStyle="bold" />
+                            <TextView android:id="@+id/weightDetailButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:clickable="true" android:contentDescription="무게 기록 상세 보기" android:focusable="true" android:text="@string/weight_detail_button" android:textColor="?attr/beardyAccent" android:textSize="13sp" android:textStyle="bold" />
                         </LinearLayout>
                         <TextView android:id="@+id/weightPeriodLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="최근 1개월" android:textColor="?attr/beardyTextSecondary" android:textSize="12sp" />
                         <FrameLayout android:layout_width="match_parent" android:layout_height="170dp" android:layout_marginTop="8dp">
@@ -44,6 +44,10 @@
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
-        <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/bottomNavigation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:background="@drawable/bg_bottom_nav" android:elevation="8dp" app:menu="@menu/bottom_navigation" app:labelVisibilityMode="labeled" app:itemIconTint="@color/bottom_nav_tint" app:itemTextColor="@color/bottom_nav_tint" />
     </LinearLayout>
+    <FrameLayout android:id="@+id/bottomNavWrapper" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:clipChildren="false" android:clipToPadding="false" android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingBottom="12dp">
+        <FrameLayout android:id="@+id/bottomNavPill" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_bottom_nav" android:clipToOutline="true" android:elevation="6dp" android:padding="4dp">
+            <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/bottomNavigation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="0dp" app:paddingBottomSystemWindowInsets="false" app:paddingLeftSystemWindowInsets="false" app:paddingRightSystemWindowInsets="false" app:itemBackground="@drawable/bg_bottom_nav_item" app:itemActiveIndicatorStyle="@style/BottomNavNoIndicator" app:itemPaddingTop="5dp" app:itemPaddingBottom="5dp" app:itemIconSize="20dp" app:itemTextAppearanceActive="@style/BottomNavLabelActive" app:itemTextAppearanceInactive="@style/BottomNavLabel" android:background="@android:color/transparent" android:elevation="0dp" app:elevation="0dp" app:menu="@menu/bottom_navigation" app:labelVisibilityMode="labeled" app:itemIconTint="@color/bottom_nav_tint" app:itemTextColor="@color/bottom_nav_tint" />
+        </FrameLayout>
+    </FrameLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

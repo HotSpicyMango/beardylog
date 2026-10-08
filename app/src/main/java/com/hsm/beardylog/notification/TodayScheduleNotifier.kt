@@ -22,6 +22,9 @@ internal object TodayScheduleNotifier {
     private val dateLabelFormat = DateTimeFormatter.ofPattern("M/d")
 
     fun notify(context: Context) {
+        // 권한이 없으면 아래 로직이 커서만 오늘로 밀어버리고 알림은 못 띄운다. 그러면 권한을
+        // 나중에 다시 켜도 그 사이 놓친 날짜는 영영 따라잡지 못하므로, 아예 커서를 건드리지 않고 끝낸다.
+        if (!hasNotificationPermission(context)) return
         val store = CalendarEntryStore(context)
         val cursor = DayCursor(context, "today_schedule")
         val today = LocalDate.now()

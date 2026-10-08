@@ -10,6 +10,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
+import com.google.android.material.button.MaterialButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -57,14 +58,18 @@ abstract class AppBaseActivity : AppCompatActivity() {
         val initialBottom = root.paddingBottom
         val bottomBar = bottomInsetTarget
         val bottomBarInitialPadding = bottomBar?.paddingBottom ?: 0
+        val bottomBarInitialLeft = bottomBar?.paddingLeft ?: 0
+        val bottomBarInitialRight = bottomBar?.paddingRight ?: 0
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             if (bottomBar != null) {
                 view.setPadding(view.paddingLeft, initialTop + bars.top, view.paddingRight, initialBottom)
+                // 가로 모드에서 3버튼 내비게이션/디스플레이 컷아웃이 옆에 있을 때 바가 그 아래로 들어가지 않도록 좌우 인셋도 반영
+                val sides = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
                 bottomBar.setPadding(
-                    bottomBar.paddingLeft,
+                    bottomBarInitialLeft + sides.left,
                     bottomBar.paddingTop,
-                    bottomBar.paddingRight,
+                    bottomBarInitialRight + sides.right,
                     bottomBarInitialPadding + bars.bottom,
                 )
             } else {
@@ -144,4 +149,19 @@ internal fun View.dismissKeyboardOnOutsideTouch(vararg inputs: EditText) {
         }
         false
     }
+}
+
+/** 버튼 높이 2단계: 화면 폭 버튼(LARGE)과 카드 안 작은 버튼(COMPACT). */
+internal const val BUTTON_HEIGHT_LARGE_DP = 44
+internal const val BUTTON_HEIGHT_COMPACT_DP = 36
+
+/** 버튼 높이를 [heightDp] 이상으로 맞춘다. 고정 높이가 아니라 최소 높이라서 시스템 글꼴을 키우면 글자에 맞춰 늘어난다.
+ *  MaterialButton 기본 위아래 inset(투명 여백 6dp)도 없애 최소 높이가 그대로 보이는 높이가 되게 한다.
+ *  (레이아웃 높이는 WRAP_CONTENT로 둘 것) */
+internal fun MaterialButton.applyButtonHeight(heightDp: Int) {
+    insetTop = 0
+    insetBottom = 0
+    val px = (heightDp * resources.displayMetrics.density).toInt()
+    minHeight = px
+    minimumHeight = px
 }

@@ -21,7 +21,11 @@ class WeightRecordAdapter(
     private val formatGrams: (Float) -> String,
     private val onRowClick: (WeightRecord) -> Unit,
     private val onDeleteClick: (WeightRecord) -> Unit,
-) : ListAdapter<WeightRecord, WeightRecordAdapter.RowViewHolder>(DIFF_CALLBACK) {
+) : ListAdapter<WeightRecordAdapter.Row, WeightRecordAdapter.RowViewHolder>(DIFF_CALLBACK) {
+
+    /** 각 행의 표시 내용은 자기 자신뿐 아니라 바로 이전(더 오래된) 기록에도 의존하므로,
+     *  DiffUtil이 그 관계 변화를 감지할 수 있도록 함께 묶어서 넘긴다. */
+    data class Row(val record: WeightRecord, val previous: WeightRecord?)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RowViewHolder {
         val binding = ItemWeightRecordBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -29,10 +33,13 @@ class WeightRecordAdapter(
     }
 
     override fun onBindViewHolder(holder: RowViewHolder, position: Int) {
-        // 목록은 최신순(내림차순)으로 표시되므로, 시간상 "이전 기록"은 한 칸 뒤(더 오래된 쪽)에 있다.
-        val record = getItem(position)
-        val previous = if (position + 1 < itemCount) getItem(position + 1) else null
-        holder.bind(record, previous)
+        val row = getItem(position)
+        holder.bind(row.record, row.previous)
+    }
+
+    /** [records]는 최신순(내림차순)으로 정렬되어 있어야 한다. */
+    fun submitRecords(records: List<WeightRecord>) {
+        submitList(records.mapIndexed { index, record -> Row(record, records.getOrNull(index + 1)) })
     }
 
     inner class RowViewHolder(private val binding: ItemWeightRecordBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -63,10 +70,13 @@ class WeightRecordAdapter(
     }
 
     companion object {
-        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<WeightRecord>() {
-            override fun areItemsTheSame(oldItem: WeightRecord, newItem: WeightRecord) = oldItem.id == newItem.id
-            override fun areContentsTheSame(oldItem: WeightRecord, newItem: WeightRecord) =
-                oldItem.recordedAt == newItem.recordedAt && oldItem.grams == newItem.grams
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Row>() {
+            override fun areItemsTheSame(oldItem: Row, newItem: Row) = oldItem.record.id == newItem.record.id
+            override fun areContentsTheSame(oldItem: Row, newItem: Row) =
+                oldItem.record.recordedAt == newItem.record.recordedAt &&
+                    oldItem.record.grams == newItem.record.grams &&
+                    oldItem.previous?.id == newItem.previous?.id &&
+                    oldItem.previous?.grams == newItem.previous?.grams
         }
     }
 }

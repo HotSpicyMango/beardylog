@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="BottomNavNoIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@android:color/transparent</item>
+    </style>
+    <style name="BottomNavLabel" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">12dp</item>
+    </style>
+    <style name="BottomNavLabelActive" parent="BottomNavLabel">
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

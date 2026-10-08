@@ -2,6 +2,7 @@ package com.hsm.beardylog
 
 import android.app.Application
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import com.hsm.beardylog.data.AppDatabase
 import com.hsm.beardylog.data.PhotoStore
 import com.hsm.beardylog.notification.AppNotificationChannel
@@ -19,6 +20,7 @@ import kotlin.concurrent.thread
 class BeardylogApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        AppCompatDelegate.setDefaultNightMode(AppThemePreferences.nightMode(this))
         val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             if (isMiuiPerfLogNoise(throwable)) {

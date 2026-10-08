@@ -34,6 +34,46 @@
         <item name="beardyOnButtonPrimary">@color/palette_ocean_on_button</item>
     </style>
 
+    <style name="Theme.Beardylog.Forest" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_forest_accent</item>
+        <item name="beardyAccentContainer">@color/palette_forest_container</item>
+        <item name="beardyBackground">@color/palette_forest_background</item>
+        <item name="beardySurface">@color/palette_forest_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_forest_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Lavender" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_lavender_accent</item>
+        <item name="beardyAccentContainer">@color/palette_lavender_container</item>
+        <item name="beardyBackground">@color/palette_lavender_background</item>
+        <item name="beardySurface">@color/palette_lavender_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_lavender_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Rose" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_rose_accent</item>
+        <item name="beardyAccentContainer">@color/palette_rose_container</item>
+        <item name="beardyBackground">@color/palette_rose_background</item>
+        <item name="beardySurface">@color/palette_rose_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_rose_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Coral" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_coral_accent</item>
+        <item name="beardyAccentContainer">@color/palette_coral_container</item>
+        <item name="beardyBackground">@color/palette_coral_background</item>
+        <item name="beardySurface">@color/palette_coral_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_coral_button</item>
+    </style>
+
+    <style name="Theme.Beardylog.Slate" parent="Base.Theme.Beardylog">
+        <item name="beardyAccent">@color/palette_slate_accent</item>
+        <item name="beardyAccentContainer">@color/palette_slate_container</item>
+        <item name="beardyBackground">@color/palette_slate_background</item>
+        <item name="beardySurface">@color/palette_slate_surface</item>
+        <item name="beardyButtonPrimary">@color/palette_slate_button</item>
+    </style>
+
     <style name="TextAppearance.Beardylog.WeightNumber" parent="TextAppearance.Material3.BodyLarge">
         <item name="fontFamily">@font/d2</item>
         <item name="android:fontFamily">@font/d2</item>

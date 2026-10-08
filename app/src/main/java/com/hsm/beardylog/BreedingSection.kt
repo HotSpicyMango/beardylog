@@ -111,16 +111,18 @@ internal class BreedingSection(private val activity: MainActivity) {
                 text = "브리딩 기록 추가"
                 setTextColor(resColor(R.color.forest))
                 backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
+                applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
                 setOnClickListener { view ->
                     view.clickHaptic()
                     showAddPairDialog()
                 }
-            })
+            }, LinearLayout.LayoutParams(match, wrap))
             return scrollView
         }
 
         content.addView(MaterialButton(activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "브리딩 기록 추가"
+            applyButtonHeight(BUTTON_HEIGHT_COMPACT_DP)
             strokeWidth = dp(1)
             strokeColor = ColorStateList.valueOf(resColor(R.color.forest))
             setTextColor(resColor(R.color.forest))
@@ -332,10 +334,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             textSize = 12f
             minWidth = 0
             minimumWidth = 0
-            minHeight = dp(36)
-            minimumHeight = dp(36)
-            insetTop = 0
-            insetBottom = 0
+            applyButtonHeight(BUTTON_HEIGHT_COMPACT_DP)
             strokeWidth = dp(1)
             strokeColor = ColorStateList.valueOf(resColor(R.color.forest))
             setTextColor(resColor(R.color.forest))
@@ -344,7 +343,7 @@ internal class BreedingSection(private val activity: MainActivity) {
                 view.clickHaptic()
                 editMatingDate(pair)
             }
-        }, LinearLayout.LayoutParams(wrap, dp(36)).apply { topMargin = dp(10) })
+        }, LinearLayout.LayoutParams(wrap, wrap).apply { topMargin = dp(10) })
         matingCard.addView(matingColumn, ViewGroup.LayoutParams(match, wrap))
         content.addView(matingCard, LinearLayout.LayoutParams(match, wrap).apply { topMargin = dp(16) })
 
@@ -367,10 +366,7 @@ internal class BreedingSection(private val activity: MainActivity) {
                     backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
                     minWidth = 0
                     minimumWidth = 0
-                    minHeight = dp(38)
-                    minimumHeight = dp(38)
-                    insetTop = 0
-                    insetBottom = 0
+                    applyButtonHeight(BUTTON_HEIGHT_COMPACT_DP)
                     setOnClickListener { view ->
                         view.clickHaptic()
                         showAddClutchDialog(pair, nextClutchNumber(pairClutches))
@@ -398,7 +394,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
             strokeColor = ColorStateList.valueOf(resColor(R.color.danger))
             strokeWidth = dp(1)
-            cornerRadius = dp(12)
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
             setOnClickListener { view ->
                 view.clickHaptic()
                 confirmDeletePair(pair)
@@ -497,10 +493,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
             minWidth = 0
             minimumWidth = 0
-            minHeight = dp(36)
-            minimumHeight = dp(36)
-            insetTop = 0
-            insetBottom = 0
+            applyButtonHeight(BUTTON_HEIGHT_COMPACT_DP)
             setOnClickListener { view ->
                 view.clickHaptic()
                 showAddHatchlingDialog(clutch)
@@ -511,10 +504,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             textSize = 12f
             minWidth = 0
             minimumWidth = 0
-            minHeight = dp(36)
-            minimumHeight = dp(36)
-            insetTop = 0
-            insetBottom = 0
+            applyButtonHeight(BUTTON_HEIGHT_COMPACT_DP)
             strokeWidth = dp(1)
             strokeColor = ColorStateList.valueOf(resColor(R.color.danger))
             setTextColor(resColor(R.color.danger))
@@ -523,7 +513,7 @@ internal class BreedingSection(private val activity: MainActivity) {
                 view.clickHaptic()
                 confirmDeleteClutch(clutch)
             }
-        }, LinearLayout.LayoutParams(wrap, dp(36)).apply { marginStart = dp(8) })
+        }, LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = dp(8) })
         column.addView(actionsRow)
 
         val clutchHatchlings = hatchlingsFor(clutch.id)

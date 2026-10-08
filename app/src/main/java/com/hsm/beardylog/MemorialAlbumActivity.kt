@@ -1,5 +1,7 @@
 package com.hsm.beardylog
 
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import android.app.Dialog
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -73,20 +75,30 @@ class MemorialAlbumActivity : AppBaseActivity() {
             runCatching {
                 withContext(Dispatchers.IO) {
                     val photoDirectory = File(filesDir, PhotoStore.MEMORIAL_DIRECTORY).apply { mkdirs() }
+                    var failedCount = 0
                     uris.forEachIndexed { index, uri ->
                         val source = contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                            ?: return@forEachIndexed
-                        val scaled = PhotoScaler.scaledJpeg(source) ?: return@forEachIndexed
+                        val scaled = source?.let { PhotoScaler.scaledJpeg(it) }
+                        if (scaled == null) {
+                            failedCount++
+                            return@forEachIndexed
+                        }
                         val output = File(photoDirectory, "memorial_${reptileId}_${System.currentTimeMillis()}_$index.jpg")
                         output.writeBytes(scaled)
                         database.memorialPhotoDao().insert(
                             MemorialPhoto(0, reptileId, Uri.fromFile(output).toString(), System.currentTimeMillis())
                         )
                     }
+                    failedCount
                 }
-            }.onSuccess {
+            }.onSuccess { failedCount ->
                 binding.addPhotoButton.isEnabled = true
-                binding.root.confirmHaptic()
+                if (failedCount > 0) {
+                    binding.root.rejectHaptic()
+                    showBriefToast("${failedCount}장을 추가하지 못했습니다")
+                } else {
+                    binding.root.confirmHaptic()
+                }
             }.onFailure {
                 binding.addPhotoButton.isEnabled = true
                 showBriefToast("사진을 추가하지 못했습니다")
@@ -171,6 +183,16 @@ class MemorialAlbumActivity : AppBaseActivity() {
         deleteButtonParams.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         deleteButtonParams.bottomMargin = dp(24)
         root.addView(deleteButton, deleteButtonParams)
+        // 전체화면 창도 시스템 바/컷아웃 아래까지 그려지므로, 버튼이 3버튼 내비게이션이나 카메라 구멍에 가리지 않게 인셋만큼 띄운다
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            closeButton.layoutParams = closeButtonParams.apply {
+                leftMargin = dp(16) + bars.left
+                topMargin = dp(16) + bars.top
+            }
+            deleteButton.layoutParams = deleteButtonParams.apply { bottomMargin = dp(24) + bars.bottom }
+            insets
+        }
 
         dialog.setContentView(root)
         pager.setCurrentItem(currentPosition, false)

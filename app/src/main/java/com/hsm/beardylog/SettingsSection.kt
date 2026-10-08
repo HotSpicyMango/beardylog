@@ -1,5 +1,7 @@
 package com.hsm.beardylog
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -17,7 +19,8 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -30,7 +33,9 @@ import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
+import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.noties.markwon.Markwon
@@ -45,10 +50,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.coroutines.cancellation.CancellationException
 import java.net.HttpURLConnection
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * MainActivity의 "설정" 섹션(테마/홈/프로필 설정 + Google Drive 백업·복원 + 앱 업데이트 체크 + 앱 정보) 전용
@@ -189,6 +196,16 @@ internal class SettingsSection(private val activity: MainActivity) {
 
     private fun themeSettingsCard(): View = settingsCard(verticalPaddingDp = 12) {
         addView(TextView(context).apply {
+            text = "화면 모드"
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(resColor(R.color.text_primary))
+        })
+        addView(displayModeToggle(), LinearLayout.LayoutParams(match, wrap).apply {
+            topMargin = dp(8)
+            bottomMargin = dp(18)
+        })
+        addView(TextView(context).apply {
             text = "앱 테마색"
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -205,6 +222,39 @@ internal class SettingsSection(private val activity: MainActivity) {
         AppThemePalette.entries.forEachIndexed { index, palette ->
             if (index > 0) addView(themeOptionDivider())
             addView(themeOptionRow(palette, palette == selectedPalette))
+        }
+    }
+
+    private fun displayModeToggle(): View {
+        val modes = listOf(
+            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM to "시스템",
+            AppCompatDelegate.MODE_NIGHT_NO to "라이트",
+            AppCompatDelegate.MODE_NIGHT_YES to "다크",
+        )
+        val currentMode = AppThemePreferences.nightMode(activity)
+        val buttons = modes.map { (mode, label) ->
+            MaterialButton(activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                id = View.generateViewId()
+                text = label
+                isCheckable = true
+                isChecked = mode == currentMode
+            }
+        }
+        return MaterialButtonToggleGroup(activity).apply {
+            isSingleSelection = true
+            isSelectionRequired = true
+            buttons.forEach { addView(it, LinearLayout.LayoutParams(0, wrap, 1f)) }
+            addOnButtonCheckedListener { _, checkedId, isChecked ->
+                if (!isChecked || themeTransitionInProgress) return@addOnButtonCheckedListener
+                val picked = buttons.indexOfFirst { it.id == checkedId }.takeIf { it >= 0 } ?: return@addOnButtonCheckedListener
+                beginThemeTransition()
+                // setDefaultNightMode는 실제로 적용되는 명암(uiMode)이 바뀔 때만 액티비티를 recreate()한다.
+                // 예를 들어 시스템이 이미 다크인데 "시스템"에서 "다크"로 바꾸면 화면상 변화가 없어
+                // recreate가 아예 일어나지 않으므로, themeTransitionInProgress 리셋과 캡처한 비트맵 소비를
+                // 보장하기 위해 여기서 항상 명시적으로 recreate()한다.
+                AppThemePreferences.setNightMode(activity, modes[picked].first)
+                activity.recreate()
+            }
         }
     }
 
@@ -264,14 +314,20 @@ internal class SettingsSection(private val activity: MainActivity) {
             setOnClickListener { view ->
                 if (selected || themeTransitionInProgress) return@setOnClickListener
                 view.selectionHaptic()
-                activity.settingsScrollY = (activity.currentTopContent as? ScrollView)?.scrollY ?: activity.settingsScrollY
-                themeTransitionInProgress = true
-                pendingThemeTransitionBitmap?.recycle()
-                pendingThemeTransitionBitmap = captureThemeTransitionBitmap()
+                beginThemeTransition()
                 AppThemePreferences.select(context, palette)
                 activity.recreate()
             }
         }
+
+    /** 테마색 전환과 화면 모드(라이트/다크/시스템) 전환 둘 다, 리크리에이트 직전 화면을 찍어뒀다가
+     *  [showPendingThemeTransition]에서 새 테마 위로 크로스페이드시키는 데 쓴다. */
+    private fun beginThemeTransition() {
+        activity.settingsScrollY = (activity.currentTopContent as? ScrollView)?.scrollY ?: activity.settingsScrollY
+        themeTransitionInProgress = true
+        pendingThemeTransitionBitmap?.recycle()
+        pendingThemeTransitionBitmap = captureThemeTransitionBitmap()
+    }
 
     private fun captureThemeTransitionBitmap(): Bitmap? {
         val decorView = activity.window.decorView
@@ -294,9 +350,9 @@ internal class SettingsSection(private val activity: MainActivity) {
             bitmap.recycle()
             return
         }
-        val overlay = android.widget.ImageView(activity).apply {
+        val overlay = ImageView(activity).apply {
             setImageBitmap(bitmap)
-            scaleType = android.widget.ImageView.ScaleType.FIT_XY
+            scaleType = ImageView.ScaleType.FIT_XY
             isClickable = true
             isFocusable = true
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
@@ -306,13 +362,13 @@ internal class SettingsSection(private val activity: MainActivity) {
             overlay.animate()
                 .alpha(0f)
                 .setDuration(THEME_TRANSITION_DURATION_MS)
-                .setInterpolator(DecelerateInterpolator())
-                .withLayer()
-                .withEndAction {
-                    decorView.removeView(overlay)
-                    overlay.setImageDrawable(null)
-                    bitmap.recycle()
-                }
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        decorView.removeView(overlay)
+                        bitmap.recycle()
+                    }
+                })
                 .start()
         }
     }
@@ -448,7 +504,8 @@ internal class SettingsSection(private val activity: MainActivity) {
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
-            text = "프로필, 사진, 무게와 관리 기록을 앱 전용 숨김 폴더에 저장합니다"
+            text = "프로필, 사진, 무게와 관리 기록을 앱 전용 숨김 폴더에 저장합니다. " +
+                "최근 백업 ${ProfileBackupManager.MAX_BACKUPS}개를 보관하며, Google 계정 저장공간을 사용합니다"
             textSize = 13f
             setTextColor(resColor(R.color.text_secondary))
             setPadding(0, dp(4), 0, 0)
@@ -485,7 +542,7 @@ internal class SettingsSection(private val activity: MainActivity) {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(resColor(R.color.forest))
             setPadding(0, 0, 0, dp(12))
-            visibility = if (activity.reptiles.isEmpty()) View.VISIBLE else View.GONE
+            visibility = if (activity.allReptiles.isEmpty()) View.VISIBLE else View.GONE
         }
         addView(driveEmptyStateHintText)
 
@@ -493,12 +550,13 @@ internal class SettingsSection(private val activity: MainActivity) {
             text = "Google Drive에 백업"
             setTextColor(resColor(R.color.button_on_primary))
             backgroundTintList = ColorStateList.valueOf(resColor(R.color.button_primary))
-            isEnabled = !driveActionInProgress && activity.reptiles.isNotEmpty()
+            isEnabled = !driveActionInProgress && activity.allReptiles.isNotEmpty()
             setOnClickListener { view ->
                 view.clickHaptic()
                 requestDriveAuthorization(DriveAction.BACKUP)
             }
-            layoutParams = LinearLayout.LayoutParams(match, dp(44))
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
+            layoutParams = LinearLayout.LayoutParams(match, wrap)
         }
         addView(driveBackupButton)
         addView(View(context).apply {
@@ -513,7 +571,8 @@ internal class SettingsSection(private val activity: MainActivity) {
                 view.clickHaptic()
                 requestDriveAuthorization(DriveAction.RESTORE)
             }
-            layoutParams = LinearLayout.LayoutParams(match, dp(44))
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
+            layoutParams = LinearLayout.LayoutParams(match, wrap)
         }
         addView(driveRestoreButton)
         updateDriveActionAvailability()
@@ -521,7 +580,7 @@ internal class SettingsSection(private val activity: MainActivity) {
 
     private fun requestDriveAuthorization(action: DriveAction) {
         if (driveActionInProgress) return
-        if (action == DriveAction.BACKUP && activity.reptiles.isEmpty()) {
+        if (action == DriveAction.BACKUP && activity.allReptiles.isEmpty()) {
             val message = "백업할 프로필이 없습니다. 재설치했다면 먼저 복원하세요"
             driveBackupStatusText?.text = message
             driveBackupButton?.rejectHaptic()
@@ -562,7 +621,7 @@ internal class SettingsSection(private val activity: MainActivity) {
     private fun runDriveAction(action: DriveAction, accessToken: String) {
         when (action) {
             DriveAction.BACKUP -> uploadProfileBackup(accessToken)
-            DriveAction.RESTORE -> loadRestorePreview(accessToken)
+            DriveAction.RESTORE -> loadRestoreChoices(accessToken)
         }
     }
 
@@ -570,13 +629,13 @@ internal class SettingsSection(private val activity: MainActivity) {
         driveBackupStatusText?.text = "기존 백업이 있는지 확인하는 중입니다…"
         activity.lifecycleScope.launch {
             runCatching {
-                withContext(Dispatchers.IO) { profileBackupManager.hasExistingBackup(accessToken) }
-            }.onSuccess { hasExistingBackup ->
-                if (hasExistingBackup) {
+                withContext(Dispatchers.IO) { profileBackupManager.listBackups(accessToken) }
+            }.onSuccess { backups ->
+                if (backups.size >= ProfileBackupManager.MAX_BACKUPS) {
                     // 다이얼로그가 떠 있는 동안은 진행 중 상태를 풀어서, 사용자가 취소해도 버튼이 계속 잠겨 있지 않게 한다.
                     pendingDriveAction = null
                     setDriveActionInProgress(false)
-                    showOverwriteBackupConfirmation(accessToken)
+                    showOverwriteBackupConfirmation(accessToken, oldest = backups.last())
                 } else {
                     performBackupUpload(accessToken)
                 }
@@ -584,10 +643,13 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
     }
 
-    private fun showOverwriteBackupConfirmation(accessToken: String) {
+    private fun showOverwriteBackupConfirmation(accessToken: String, oldest: ProfileBackupManager.RemoteBackup) {
         MaterialAlertDialogBuilder(activity)
-            .setTitle("기존 백업 덮어쓰기")
-            .setMessage("Google Drive에 이미 백업된 내용이 있습니다. 지금 백업하면 이전 백업은 사라지고 되돌릴 수 없습니다. 계속할까요?")
+            .setTitle("가장 오래된 백업 삭제")
+            .setMessage(
+                "Google Drive에는 백업을 최대 ${ProfileBackupManager.MAX_BACKUPS}개까지 보관합니다. " +
+                    "지금 백업하면 가장 오래된 백업(${formatBackupTime(oldest.modifiedAt)})이 삭제되고 되돌릴 수 없습니다. 계속할까요?"
+            )
             .setNegativeButton("취소") { _, _ -> cancelBackupOverwrite() }
             .setPositiveButton("백업") { _, _ -> performBackupUpload(accessToken) }
             .setOnCancelListener { cancelBackupOverwrite() }
@@ -621,11 +683,56 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
     }
 
-    private fun loadRestorePreview(accessToken: String) {
+    private fun loadRestoreChoices(accessToken: String) {
         driveBackupStatusText?.text = "Google Drive 백업을 확인하는 중입니다…"
         activity.lifecycleScope.launch {
             runCatching {
-                withContext(Dispatchers.IO) { profileBackupManager.downloadLatest(accessToken) }
+                withContext(Dispatchers.IO) { profileBackupManager.listBackups(accessToken) }
+            }.onSuccess { backups ->
+                when (backups.size) {
+                    0 -> failDriveAction(ProfileBackupManager.NoBackupFoundException())
+                    1 -> loadRestorePreview(accessToken, backups.single())
+                    else -> {
+                        // 선택 창이 떠 있는 동안은 진행 중 상태를 풀어 둔다(취소해도 버튼이 잠기지 않게).
+                        pendingDriveAction = null
+                        setDriveActionInProgress(false)
+                        showRestoreChooser(accessToken, backups)
+                    }
+                }
+            }.onFailure(::failDriveAction)
+        }
+    }
+
+    private fun showRestoreChooser(accessToken: String, backups: List<ProfileBackupManager.RemoteBackup>) {
+        // 같은 분에 두 번 백업하면 시각이 똑같이 보이므로, 그때만 초까지 표시한다.
+        val minuteLabels = backups.map { formatBackupTime(it.modifiedAt) }
+        val showSeconds = minuteLabels.toSet().size != minuteLabels.size
+        val labels = backups.mapIndexed { index, backup ->
+            buildString {
+                append(if (showSeconds) formatBackupTime(backup.modifiedAt, withSeconds = true) else minuteLabels[index])
+                if (index == 0) append(" (최신)")
+                backup.sizeBytes?.let { append(" · ${formatBackupSize(it)}") }
+            }
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(activity)
+            .setTitle("복원할 백업 선택")
+            .setItems(labels) { _, which -> loadRestorePreview(accessToken, backups[which]) }
+            .setNegativeButton("취소") { _, _ -> cancelRestorePreview() }
+            .setOnCancelListener { cancelRestorePreview() }
+            .show()
+    }
+
+    private fun formatBackupSize(bytes: Long): String = when {
+        bytes >= 1024L * 1024 -> String.format(Locale.KOREA, "%.1fMB", bytes / (1024.0 * 1024))
+        else -> "${(bytes / 1024).coerceAtLeast(1)}KB"
+    }
+
+    private fun loadRestorePreview(accessToken: String, backup: ProfileBackupManager.RemoteBackup) {
+        setDriveActionInProgress(true)
+        driveBackupStatusText?.text = "선택한 백업을 내려받는 중입니다…"
+        activity.lifecycleScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { profileBackupManager.download(accessToken, backup) }
             }.onSuccess { preview ->
                 pendingDriveAction = null
                 setDriveActionInProgress(false)
@@ -692,12 +799,12 @@ internal class SettingsSection(private val activity: MainActivity) {
     }
 
     fun updateDriveActionAvailability() {
-        val canBackup = !driveActionInProgress && activity.reptiles.isNotEmpty()
+        val canBackup = !driveActionInProgress && activity.allReptiles.isNotEmpty()
         driveBackupButton?.apply {
             isEnabled = canBackup
             isClickable = canBackup
             alpha = if (canBackup) 1f else DISABLED_BUTTON_ALPHA
-            text = if (activity.reptiles.isEmpty()) "백업할 프로필이 없습니다" else "Google Drive에 백업"
+            text = if (activity.allReptiles.isEmpty()) "백업할 프로필이 없습니다" else "Google Drive에 백업"
         }
         val canRestore = !driveActionInProgress
         driveRestoreButton?.apply {
@@ -705,7 +812,7 @@ internal class SettingsSection(private val activity: MainActivity) {
             isClickable = canRestore
             alpha = if (canRestore) 1f else DISABLED_BUTTON_ALPHA
         }
-        driveEmptyStateHintText?.visibility = if (activity.reptiles.isEmpty()) View.VISIBLE else View.GONE
+        driveEmptyStateHintText?.visibility = if (activity.allReptiles.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun finishDriveAction(status: String? = null) {
@@ -718,6 +825,9 @@ internal class SettingsSection(private val activity: MainActivity) {
     }
 
     private fun failDriveAction(error: Throwable) {
+        // 화면 회전 등으로 액티비티가 다시 만들어지면 코루틴이 취소된다. runCatching이 그 취소까지 잡아서
+        // "StandaloneCoroutine was cancelled" 같은 실패 토스트가 뜨지 않도록 무시한다.
+        if (error is CancellationException) return
         val message = when (error) {
             is ProfileBackupManager.NoBackupFoundException -> error.message.orEmpty()
             is ProfileBackupManager.NoProfilesToBackupException -> error.message.orEmpty()
@@ -748,10 +858,10 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
     }
 
-    private fun formatBackupTime(epochMillis: Long): String =
+    private fun formatBackupTime(epochMillis: Long, withSeconds: Boolean = false): String =
         Instant.ofEpochMilli(epochMillis)
             .atZone(ZoneId.systemDefault())
-            .format(DateTimeFormatter.ofPattern("yyyy년 M월 d일 HH:mm"))
+            .format(DateTimeFormatter.ofPattern(if (withSeconds) "yyyy년 M월 d일 HH:mm:ss" else "yyyy년 M월 d일 HH:mm"))
 
     private fun updateSettingsCard(): View = settingsCard {
         addView(settingRow(
@@ -792,25 +902,26 @@ internal class SettingsSection(private val activity: MainActivity) {
                 view.clickHaptic()
                 checkForUpdate(showNoUpdateToast = true)
             }
-            layoutParams = LinearLayout.LayoutParams(match, dp(42))
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
+            layoutParams = LinearLayout.LayoutParams(match, wrap)
         })
     }
 
     private fun appInfoCard(): View = settingsCard(verticalPaddingDp = 12) {
         val info = packageInfo()
         addView(infoRow("앱 이름", activity.getString(R.string.app_name), compact = true))
-        addAppInfoDivider()
+        addAppInfoDivider(marginDp = 3)
         addView(infoRow("버전", "${info.versionName ?: "-"} (${versionCode(info)})", compact = true))
-        addAppInfoDivider()
+        addAppInfoDivider(marginDp = 3)
         addView(infoRow("제작", "M.G OH · J.H BAE", compact = true))
-        addAppInfoDivider()
+        addAppInfoDivider(marginDp = 3)
         addView(TextView(activity).apply {
             text = "\"우리는 모두 마음 한켠에 조그만 생명이 주고 간 다정함을 품고 살아갑니다.\""
             textSize = 10.5f
             gravity = Gravity.CENTER
             setTypeface(typeface, android.graphics.Typeface.NORMAL)
             setTextColor(resColor(R.color.text_secondary))
-            setPadding(dp(0), dp(12), dp(0), dp(12))
+            setPadding(dp(0), dp(8), dp(0), dp(4))
         })
     }
 
@@ -840,7 +951,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         LinearLayout(activity).apply {
             gravity = Gravity.CENTER_VERTICAL
             orientation = LinearLayout.HORIZONTAL
-            minimumHeight = dp(if (compact) 36 else 44)
+            minimumHeight = dp(if (compact) 30 else 44)
             addView(TextView(context).apply {
                 text = label
                 textSize = 14f
@@ -870,12 +981,12 @@ internal class SettingsSection(private val activity: MainActivity) {
             })
         }
 
-    private fun LinearLayout.addAppInfoDivider() {
+    private fun LinearLayout.addAppInfoDivider(marginDp: Int = 6) {
         addView(View(context).apply {
             setBackgroundColor(resColor(R.color.forest_light))
             layoutParams = LinearLayout.LayoutParams(match, dp(1)).apply {
-                topMargin = dp(6)
-                bottomMargin = dp(6)
+                topMargin = dp(marginDp)
+                bottomMargin = dp(marginDp)
             }
         })
     }
@@ -885,7 +996,8 @@ internal class SettingsSection(private val activity: MainActivity) {
             setBackgroundColor(resColor(R.color.forest_light))
             layoutParams = LinearLayout.LayoutParams(match, dp(1)).apply {
                 topMargin = dp(14)
-                bottomMargin = dp(6)
+                // 버튼 아래 카드 여백(16dp)과 같게 해서, 구분선과 카드 끝 사이 가운데에 버튼이 오게 한다
+                bottomMargin = dp(16)
             }
         })
     }

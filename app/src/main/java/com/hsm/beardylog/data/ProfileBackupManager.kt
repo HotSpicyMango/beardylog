@@ -11,6 +11,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -49,16 +50,20 @@ class ProfileBackupManager(
         }
     }
 
-    /** 새로 백업하면 기존 백업 파일이 지워지므로(단일 슬롯), 업로드 전에 미리 경고할 때 쓴다. */
-    fun hasExistingBackup(accessToken: String): Boolean = listBackupFiles(accessToken).isNotEmpty()
+    /** Drive에 남아 있는 백업 한 벌. [modifiedAt]은 업로드 시각(최신순 정렬 기준). */
+    data class RemoteBackup(val id: String, val modifiedAt: Long, val sizeBytes: Long?)
 
+    /** 최신 백업이 앞에 오도록 정렬된 목록. 업로드 전 경고와 복원할 백업 선택에 쓴다. */
+    fun listBackups(accessToken: String): List<RemoteBackup> = listBackupFiles(accessToken)
+
+    /** 새 백업을 올린 뒤 최신 [MAX_BACKUPS]개만 남기고 오래된 백업을 지운다.
+     *  업로드가 성공한 다음에 지우므로, 업로드가 실패해도 기존 백업은 그대로 남는다. */
     fun upload(accessToken: String): BackupResult {
         val archive = File.createTempFile("backup", ".zip", appContext.cacheDir)
         try {
             val result = writeArchive(archive)
-            val previousFiles = listBackupFiles(accessToken)
             uploadArchive(accessToken, archive)
-            previousFiles.forEach { remote ->
+            listBackupFiles(accessToken).drop(MAX_BACKUPS).forEach { remote ->
                 runCatching { deleteFile(accessToken, remote.id) }
             }
             return result
@@ -67,9 +72,7 @@ class ProfileBackupManager(
         }
     }
 
-    fun downloadLatest(accessToken: String): RestorePreview {
-        val remote = listBackupFiles(accessToken).firstOrNull()
-            ?: throw NoBackupFoundException()
+    fun download(accessToken: String, remote: RemoteBackup): RestorePreview {
         val downloaded = File.createTempFile("restore", ".tmp", appContext.cacheDir)
         try {
             downloadTo(
@@ -612,13 +615,13 @@ class ProfileBackupManager(
         return BackupPhoto.Inline(photoValue.optString("mimeType", "image/jpeg"), bytes)
     }
 
-    private fun listBackupFiles(accessToken: String): List<RemoteFile> {
+    private fun listBackupFiles(accessToken: String): List<RemoteBackup> {
         // 구버전으로 백업해 둔 사용자도 복원할 수 있어야 하므로 예전 JSON 파일명까지 함께 찾는다.
         val query = URLEncoder.encode(
             "(name = '$ARCHIVE_FILE_NAME' or name = '$LEGACY_FILE_NAME') and trashed = false",
             "UTF-8"
         )
-        val fields = URLEncoder.encode("files(id,modifiedTime)", "UTF-8")
+        val fields = URLEncoder.encode("files(id,modifiedTime,size)", "UTF-8")
         val response = request(
             url = "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=$query&orderBy=modifiedTime%20desc&pageSize=20&fields=$fields",
             method = "GET",
@@ -626,7 +629,11 @@ class ProfileBackupManager(
         )
         val files = JSONObject(String(response, StandardCharsets.UTF_8)).optJSONArray("files") ?: JSONArray()
         return files.mapObjects { value ->
-            RemoteFile(value.getString("id"))
+            RemoteBackup(
+                id = value.getString("id"),
+                modifiedAt = runCatching { Instant.parse(value.getString("modifiedTime")).toEpochMilli() }.getOrDefault(0L),
+                sizeBytes = value.optString("size").toLongOrNull()
+            )
         }
     }
 
@@ -699,12 +706,17 @@ class ProfileBackupManager(
         }
     }
 
-    private fun failureMessage(connection: HttpURLConnection, responseCode: Int): String {
-        val detail = runCatching {
-            val body = connection.errorStream?.use { it.readBytes() } ?: ByteArray(0)
-            JSONObject(String(body, StandardCharsets.UTF_8)).optJSONObject("error")?.optString("message")
-        }.getOrNull().takeUnless { it.isNullOrBlank() }
-        return detail ?: "Google Drive 요청 실패 ($responseCode)"
+    private fun failureMessage(connection: HttpURLConnection, responseCode: Int): String =
+        driveErrorMessage(connection.errorStream?.use { it.readBytes() } ?: ByteArray(0), responseCode)
+
+    /** Drive 오류 응답을 사용자에게 보여줄 문장으로 바꾼다. 저장공간 부족은 영어 원문 대신 해결 방법을 안내한다. */
+    private fun driveErrorMessage(body: ByteArray, responseCode: Int): String {
+        val error = runCatching { JSONObject(String(body, StandardCharsets.UTF_8)).optJSONObject("error") }.getOrNull()
+        val reason = error?.optJSONArray("errors")?.optJSONObject(0)?.optString("reason")
+        if (reason == "storageQuotaExceeded") {
+            return "Google 계정 저장공간이 부족해 백업하지 못했습니다. 저장공간을 정리한 뒤 다시 시도하세요 (기존 백업은 그대로 남아 있습니다)"
+        }
+        return error?.optString("message").takeUnless { it.isNullOrBlank() } ?: "Google Drive 요청 실패 ($responseCode)"
     }
 
     private fun deleteFile(accessToken: String, fileId: String) {
@@ -728,14 +740,7 @@ class ProfileBackupManager(
             val response = (if (responseCode in 200..299) connection.inputStream else connection.errorStream)
                 ?.use { it.readBytes() }
                 ?: ByteArray(0)
-            if (responseCode !in 200..299) {
-                val detail = runCatching {
-                    JSONObject(String(response, StandardCharsets.UTF_8))
-                        .optJSONObject("error")
-                        ?.optString("message")
-                }.getOrNull().takeUnless { it.isNullOrBlank() }
-                throw DriveBackupException(detail ?: "Google Drive 요청 실패 ($responseCode)")
-            }
+            if (responseCode !in 200..299) throw DriveBackupException(driveErrorMessage(response, responseCode))
             return response
         } finally {
             connection.disconnect()
@@ -827,28 +832,29 @@ class ProfileBackupManager(
             }
         }
     }
-    private data class RemoteFile(val id: String)
 
     class NoBackupFoundException : Exception("Google Drive에 저장된 백업이 없습니다")
     class NoProfilesToBackupException : Exception("백업할 프로필이 없습니다. 재설치했다면 먼저 복원하세요")
     class InvalidBackupException(message: String) : Exception(message)
     class DriveBackupException(message: String) : Exception(message)
 
-    private companion object {
-        const val BACKUP_FORMAT = "beardylog-profile-backup"
+    companion object {
+        private const val BACKUP_FORMAT = "beardylog-profile-backup"
 
         /** ZIP 컨테이너. manifest.json에는 DB 레코드만 있고 사진은 photos/ 엔트리로 따로 들어간다. */
-        const val ARCHIVE_SCHEMA_VERSION = 2
-        const val ARCHIVE_FILE_NAME = "beardylog_profile_backup_v2.zip"
-        const val ARCHIVE_MIME_TYPE = "application/zip"
-        const val MANIFEST_ENTRY = "manifest.json"
-        const val PHOTO_ENTRY_PREFIX = "photos"
-        val KNOWN_PHOTO_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
+        private const val ARCHIVE_SCHEMA_VERSION = 2
+        private const val ARCHIVE_FILE_NAME = "beardylog_profile_backup_v2.zip"
+        private const val ARCHIVE_MIME_TYPE = "application/zip"
+        private const val MANIFEST_ENTRY = "manifest.json"
+        private const val PHOTO_ENTRY_PREFIX = "photos"
+        private val KNOWN_PHOTO_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
 
         /** 사진을 Base64로 인라인하던 예전 형식. 새로 쓰지는 않고 복원만 지원한다. */
-        const val LEGACY_SCHEMA_VERSION = 1
-        const val LEGACY_FILE_NAME = "beardylog_profile_backup_v1.json"
-        const val CONNECT_TIMEOUT_MS = 15_000
-        const val READ_TIMEOUT_MS = 60_000
+        private const val LEGACY_SCHEMA_VERSION = 1
+        private const val LEGACY_FILE_NAME = "beardylog_profile_backup_v1.json"
+        /** Drive에 보관하는 백업 개수. 넘치면 가장 오래된 것부터 지운다. */
+        const val MAX_BACKUPS = 3
+        private const val CONNECT_TIMEOUT_MS = 15_000
+        private const val READ_TIMEOUT_MS = 60_000
     }
 }

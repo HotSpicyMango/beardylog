@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.Period
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class ReptileDetailActivity : AppBaseActivity() {
@@ -89,7 +90,8 @@ class ReptileDetailActivity : AppBaseActivity() {
         val reptile = currentReptile ?: return
         val sheetBinding = DialogMemorialBinding.inflate(layoutInflater)
         val dialog = BottomSheetDialog(this)
-        var selectedDate = LocalDate.now()
+        val startDate = LocalDate.ofEpochDay(reptile.hatchingDate ?: reptile.adoptionDate ?: reptile.referenceDate)
+        var selectedDate = LocalDate.now().coerceAtLeast(startDate)
         sheetBinding.dateInput.setText(selectedDate.format(formatter))
         sheetBinding.dateInput.setOnClickListener { view ->
             view.clickHaptic()
@@ -97,7 +99,9 @@ class ReptileDetailActivity : AppBaseActivity() {
                 selectedDate = LocalDate.of(year, month + 1, day)
                 sheetBinding.dateInput.setText(selectedDate.format(formatter))
             }, selectedDate.year, selectedDate.monthValue - 1, selectedDate.dayOfMonth).apply {
-                datePicker.maxDate = System.currentTimeMillis()
+                // 함께한 시간이 음수로 표시되지 않도록, 사망일은 해칭일/입양일 이후로만 고를 수 있게 한다.
+                datePicker.minDate = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                datePicker.maxDate = maxOf(System.currentTimeMillis(), datePicker.minDate)
             }.show()
         }
         sheetBinding.cancelButton.setOnClickListener { view ->

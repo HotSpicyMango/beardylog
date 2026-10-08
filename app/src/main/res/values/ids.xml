@@ -3,4 +3,5 @@
     <item name="calendar_previous_month_button" type="id" />
     <item name="calendar_month_title" type="id" />
     <item name="calendar_next_month_button" type="id" />
+    <item name="bottom_bar_clearance_base" type="id" />
 </resources>

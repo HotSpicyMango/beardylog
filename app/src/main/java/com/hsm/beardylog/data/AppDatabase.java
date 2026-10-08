@@ -102,8 +102,9 @@ public abstract class AppDatabase extends RoomDatabase {
 
     /** Permanently deletes a reptile and everything tied to it (live or memorial profile alike): the profile
      *  photo and memorial album files on disk, then the row itself. weight_records/care_schedules/care_logs/
-     *  memorial_photos rows cascade via FK; breeding_records has no FK so it's cleaned up manually here.
-     *  breeding_pairs referencing this reptile are removed too, which cascades to their clutches/hatchlings via FK.
+     *  memorial_photos rows cascade via FK. breeding_records/breeding_pairs intentionally have no FK to
+     *  reptiles and keep a name snapshot (see BreedingPair/BreedingRecord) so breeding history survives
+     *  this delete instead of being wiped with it.
      *  Irreversible. Call off the main thread. */
     public void deleteReptileFully(long reptileId) {
         Reptile reptile = reptileDao().byId(reptileId);
@@ -114,8 +115,6 @@ public abstract class AppDatabase extends RoomDatabase {
             deleteFileQuietly(photo.photoUri);
         }
         SupportSQLiteDatabase database = getOpenHelper().getWritableDatabase();
-        database.execSQL("DELETE FROM breeding_records WHERE maleReptileId = " + reptileId + " OR femaleReptileId = " + reptileId);
-        database.execSQL("DELETE FROM breeding_pairs WHERE maleReptileId = " + reptileId + " OR femaleReptileId = " + reptileId);
         database.execSQL("DELETE FROM reptiles WHERE id = " + reptileId);
         // Same reasoning as clearActivityRecordsForReptile: these are raw execSQL deletes, so Room's
         // LiveData (e.g. the 추억공간 list backed by ReptileDao.observeAll()) won't notice the change

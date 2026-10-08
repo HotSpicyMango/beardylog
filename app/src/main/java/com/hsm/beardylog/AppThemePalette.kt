@@ -2,6 +2,7 @@ package com.hsm.beardylog
 
 import android.content.Context
 import android.util.TypedValue
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.annotation.ColorRes
 import androidx.annotation.AttrRes
 import androidx.annotation.StyleRes
@@ -66,6 +67,7 @@ enum class AppThemePalette(
 object AppThemePreferences {
     private const val PREFERENCES_NAME = "app_settings"
     private const val KEY_APP_THEME = "app_theme"
+    private const val KEY_NIGHT_MODE = "night_mode"
 
     fun selected(context: Context): AppThemePalette = AppThemePalette.fromPreferenceKey(
         context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
@@ -77,6 +79,19 @@ object AppThemePreferences {
             .edit()
             .putString(KEY_APP_THEME, palette.preferenceKey)
             .apply()
+    }
+
+    /** AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM / MODE_NIGHT_NO / MODE_NIGHT_YES 중 하나. */
+    fun nightMode(context: Context): Int =
+        context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            .getInt(KEY_NIGHT_MODE, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+
+    fun setNightMode(context: Context, mode: Int) {
+        context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_NIGHT_MODE, mode)
+            .apply()
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 }
 

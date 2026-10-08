@@ -268,6 +268,7 @@ internal class MemorialSection(private val activity: MainActivity) {
 
         content.addView(MaterialButton(activity).apply {
             text = "몸무게 기록 보기"
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
             setTextColor(resColor(R.color.forest))
             backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
             setOnClickListener { view ->
@@ -287,7 +288,7 @@ internal class MemorialSection(private val activity: MainActivity) {
             backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
             strokeColor = ColorStateList.valueOf(resColor(R.color.danger))
             strokeWidth = dp(1)
-            cornerRadius = dp(12)
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
             setIconResource(R.drawable.ic_delete)
             iconTint = ColorStateList.valueOf(resColor(R.color.danger))
             setOnClickListener { view ->
@@ -368,6 +369,7 @@ internal class MemorialSection(private val activity: MainActivity) {
         }
         column.addView(MaterialButton(activity).apply {
             text = if (albumPhotos.isEmpty()) "사진 추가하기" else "앨범 전체보기"
+            applyButtonHeight(BUTTON_HEIGHT_LARGE_DP)
             setTextColor(resColor(R.color.forest))
             backgroundTintList = ColorStateList.valueOf(resColor(R.color.forest_light))
             setOnClickListener { view ->

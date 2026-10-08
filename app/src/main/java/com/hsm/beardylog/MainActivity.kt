@@ -12,6 +12,9 @@ import android.widget.ScrollView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.widget.NestedScrollView
+import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.ViewModelProvider
 import com.hsm.beardylog.data.AppDatabase
 import com.hsm.beardylog.data.Reptile
@@ -26,7 +29,7 @@ import java.time.LocalDate
 class MainActivity : AppBaseActivity() {
     internal lateinit var binding: ActivityMainBinding
     override val bottomInsetTarget: View?
-        get() = if (::binding.isInitialized) binding.bottomNavigation else null
+        get() = if (::binding.isInitialized) binding.bottomNavWrapper else null
     private lateinit var viewModel: ReptileViewModel
     internal var reptiles: List<Reptile> = emptyList()
     internal var allReptiles: List<Reptile> = emptyList()
@@ -98,6 +101,25 @@ class MainActivity : AppBaseActivity() {
         mainColumn = binding.root.getChildAt(0) as LinearLayout
         homeContent = mainColumn.getChildAt(0)
         currentTopContent = homeContent
+        applyBottomBarClearance(homeContent)
+        // 하단바가 콘텐츠 위에 떠 있으므로, 바 높이(인셋 포함)가 정해지거나 바뀔 때마다 현재 화면 여백을 다시 맞춘다.
+        binding.bottomNavWrapper.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+            if (bottom - top != oldBottom - oldTop) {
+                // 레이아웃 진행 중 다른 뷰의 패딩을 바꾸지 않도록 다음 프레임으로 미룸
+                binding.bottomNavWrapper.post { currentTopContent?.let(::applyBottomBarClearance) }
+            }
+        }
+    }
+
+    /** 떠 있는 하단바에 마지막 항목이 가려지지 않도록 아래 여백을 준다.
+     *  스크롤 뷰는 clipToPadding을 꺼서 콘텐츠가 바 뒤로 비쳐 보이도록 한다. */
+    private fun applyBottomBarClearance(content: View) {
+        val base = content.getTag(R.id.bottom_bar_clearance_base) as? Int
+            ?: content.paddingBottom.also { content.setTag(R.id.bottom_bar_clearance_base, it) }
+        content.setPadding(content.paddingLeft, content.paddingTop, content.paddingRight, base + binding.bottomNavWrapper.height)
+        if (content is ViewGroup && (content is ScrollView || content is NestedScrollView || content is RecyclerView)) {
+            content.clipToPadding = false
+        }
     }
 
     private fun registerBackHandler() {
@@ -124,6 +146,11 @@ class MainActivity : AppBaseActivity() {
     }
 
     private fun setupBottomNavigation(savedInstanceState: Bundle?) {
+        // 기본 아이콘 주변 인디케이터를 끄고, itemBackground(항목 전체 알약)를 선택 표시로 사용
+        binding.bottomNavigation.isItemActiveIndicatorEnabled = false
+        // 시스템 바 인셋은 bottomNavWrapper가 처리하므로, 바 자체가 인셋만큼 안쪽 여백을 늘리지 않게 막음
+        // (3버튼 내비게이션에서 알약 아래에 빈 공간이 생기던 문제)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavigation) { _, insets -> insets }
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             val section = sectionForMenuItem(item.itemId)
             if (section == null) {
@@ -270,6 +297,7 @@ class MainActivity : AppBaseActivity() {
         if (currentTopContent === content) return
         mainColumn.removeViewAt(0)
         mainColumn.addView(content, 0, LinearLayout.LayoutParams(match, 0, 1f))
+        applyBottomBarClearance(content)
         currentTopContent = content
     }
 
