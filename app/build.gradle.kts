@@ -30,9 +30,9 @@ android {
         applicationId = "com.hsm.beardylog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 22
-        versionName = "1.1.2"
-//      10/8
+        versionCode = 24
+        versionName = "1.1.4"
+//      10/9
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KOREA_HOLIDAY_API_KEY", "\"${localProperties.getProperty("KOREA_HOLIDAY_API_KEY", "")}\"")
@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.room.runtime)
@@ -81,4 +82,5 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("io.noties.markwon:core:4.6.2")
+    implementation("com.github.Dimezis:BlurView:version-3.2.0")
 }

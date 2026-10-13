@@ -50,9 +50,13 @@
     <color name="palette_coral_surface">#FFFFFFFF</color>
     <color name="palette_coral_button">#A95434</color>
 
-    <color name="palette_slate_accent">#676767</color>
-    <color name="palette_slate_container">#E7E7E7</color>
-    <color name="palette_slate_background">#F9F9F9</color>
+    <!-- 그레이(라이트): 검정 메인색에 맞춘 푸른 기 없는 무채색. 흰 카드가 배경과 구분되도록 배경을 한 톤 내림 -->
+    <color name="palette_slate_accent">#000000</color>
+    <color name="palette_slate_container">#E5E5E5</color>
+    <color name="palette_slate_background">#F2F2F2</color>
     <color name="palette_slate_surface">#FFFFFFFF</color>
-    <color name="palette_slate_button">#676767</color>
+    <color name="palette_slate_button">#000000</color>
+    <color name="palette_slate_on_button">#FFFFFFFF</color>
+    <color name="palette_slate_text_primary">#111111</color>
+    <color name="palette_slate_text_secondary">#6E6E6E</color>
 </resources>

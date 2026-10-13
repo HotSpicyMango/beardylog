@@ -50,6 +50,7 @@ enum class AppThemePalette(
         styleRes = R.style.Theme_Beardylog_Coral,
         previewColorRes = R.color.palette_coral_accent
     ),
+    /** 라이트 모드는 그레이, 다크 모드는 OLED용 완전한 검정 배경. */
     SLATE(
         preferenceKey = "slate",
         displayName = "그레이",

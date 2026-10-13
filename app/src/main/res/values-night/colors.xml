@@ -50,9 +50,13 @@
     <color name="palette_coral_surface">#FF291D18</color>
     <color name="palette_coral_button">#FF9A472B</color>
 
-    <color name="palette_slate_accent">#FFBBC7D2</color>
-    <color name="palette_slate_container">#FF34404A</color>
-    <color name="palette_slate_background">#FF11171B</color>
-    <color name="palette_slate_surface">#FF1A2228</color>
-    <color name="palette_slate_button">#FF526272</color>
+    <!-- 그레이(다크, OLED): 라이트의 반전. 완전한 검정 배경에 흰 메인색, 흰 버튼 위 글자는 검정 -->
+    <color name="palette_slate_accent">#FFFFFFFF</color>
+    <color name="palette_slate_container">#FF2A2A2A</color>
+    <color name="palette_slate_background">#FF000000</color>
+    <color name="palette_slate_surface">#FF111111</color>
+    <color name="palette_slate_button">#FFFFFFFF</color>
+    <color name="palette_slate_on_button">#FF000000</color>
+    <color name="palette_slate_text_primary">#FFEDEDED</color>
+    <color name="palette_slate_text_secondary">#FF9E9E9E</color>
 </resources>

@@ -819,6 +819,8 @@ internal class CalendarSection(private val activity: MainActivity) {
                     bottomMargin = bottomNavHeight + dp(12)
                 }
             )
+            // 스크롤로 하단바가 내려가 있으면 알림도 그만큼 내려 바 자리 위에 띄운다
+            feedback.translationY = activity.binding.bottomNavWrapper.translationY
             calendarSavedFeedbackView = feedback
             feedback.bringToFront()
             feedback.animate().alpha(1f).setDuration(120L).start()

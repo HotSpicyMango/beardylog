@@ -7,11 +7,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateInterpolator
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.splashscreen.SplashScreenViewProvider
 import androidx.core.view.ViewCompat
 import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.RecyclerView
@@ -21,6 +25,7 @@ import com.hsm.beardylog.data.Reptile
 import com.hsm.beardylog.data.ReptileRepository
 import com.hsm.beardylog.data.WeightChartPreferences
 import com.hsm.beardylog.notification.NotificationSettings
+import com.hsm.beardylog.ui.BottomBarScrollBehavior
 import com.hsm.beardylog.databinding.ActivityMainBinding
 import com.hsm.beardylog.viewmodel.ReptileViewModel
 import com.hsm.beardylog.viewmodel.ReptileViewModelFactory
@@ -58,7 +63,11 @@ class MainActivity : AppBaseActivity() {
         ActivityResultContracts.RequestPermission()
     ) { /* 거부해도 앱은 정상 동작하고, 알림만 안 뜬다. 별도 안내 없이 넘어간다. */ }
     override fun onCreate(savedInstanceState: Bundle?) {
+        // AppBaseActivity가 super.onCreate에서 선택한 팔레트 테마를 입히므로, 그보다 먼저 설치해야 덮어쓰이지 않는다
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // 테마 변경 등으로 다시 만들어질 때는 퇴장 애니메이션을 생략한다
+        if (savedInstanceState == null) splashScreen.setOnExitAnimationListener(::playSplashExitAnimation)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupRootContent()
@@ -97,8 +106,23 @@ class MainActivity : AppBaseActivity() {
         if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
+    /** 시작 화면이 닫힐 때 로고는 살짝 커지고 화면 전체는 서서히 사라진다. */
+    private fun playSplashExitAnimation(provider: SplashScreenViewProvider) {
+        provider.iconView.animate()
+            .scaleX(SPLASH_EXIT_ICON_SCALE)
+            .scaleY(SPLASH_EXIT_ICON_SCALE)
+            .setInterpolator(AccelerateInterpolator())
+            .setDuration(SPLASH_EXIT_DURATION_MS)
+            .start()
+        provider.view.animate()
+            .alpha(0f)
+            .setDuration(SPLASH_EXIT_DURATION_MS)
+            .withEndAction { provider.remove() }
+            .start()
+    }
+
     private fun setupRootContent() {
-        mainColumn = binding.root.getChildAt(0) as LinearLayout
+        mainColumn = binding.mainColumn
         homeContent = mainColumn.getChildAt(0)
         currentTopContent = homeContent
         applyBottomBarClearance(homeContent)
@@ -112,13 +136,16 @@ class MainActivity : AppBaseActivity() {
     }
 
     /** 떠 있는 하단바에 마지막 항목이 가려지지 않도록 아래 여백을 준다.
-     *  스크롤 뷰는 clipToPadding을 꺼서 콘텐츠가 바 뒤로 비쳐 보이도록 한다. */
+     *  스크롤 뷰는 clipToPadding을 꺼서 콘텐츠가 바 뒤로 비쳐 보이도록 하고,
+     *  중첩 스크롤을 켜서 스크롤 방향에 따라 바가 숨거나 나타나게 한다(BottomBarScrollBehavior). */
     private fun applyBottomBarClearance(content: View) {
         val base = content.getTag(R.id.bottom_bar_clearance_base) as? Int
             ?: content.paddingBottom.also { content.setTag(R.id.bottom_bar_clearance_base, it) }
         content.setPadding(content.paddingLeft, content.paddingTop, content.paddingRight, base + binding.bottomNavWrapper.height)
         if (content is ViewGroup && (content is ScrollView || content is NestedScrollView || content is RecyclerView)) {
             content.clipToPadding = false
+            // 일반 ScrollView는 중첩 스크롤이 기본으로 꺼져 있어 CoordinatorLayout까지 스크롤이 전달되지 않는다
+            content.isNestedScrollingEnabled = true
         }
     }
 
@@ -151,6 +178,15 @@ class MainActivity : AppBaseActivity() {
         // 시스템 바 인셋은 bottomNavWrapper가 처리하므로, 바 자체가 인셋만큼 안쪽 여백을 늘리지 않게 막음
         // (3버튼 내비게이션에서 알약 아래에 빈 공간이 생기던 문제)
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavigation) { _, insets -> insets }
+        // 바 뒤 콘텐츠를 흐리게 비춘다. RenderEffect를 쓸 수 있는 API 31+에서만 켜고,
+        // 그 미만은 설정하지 않아 기존 반투명 배경(drawable/bg_bottom_nav)만 보인다.
+        // BlurTarget 스냅샷엔 자기 배경이 빠지므로, 배경을 먼저 깔지 않으면 빈 영역이 투명하게 블러되어
+        // 그 아래 선명한 콘텐츠(카드 테두리 등)가 비쳐 보인다.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            binding.bottomNavPill.setupWith(binding.blurTarget)
+                .setFrameClearDrawable(binding.blurTarget.background)
+                .setBlurRadius(BOTTOM_NAV_BLUR_RADIUS)
+        }
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             val section = sectionForMenuItem(item.itemId)
             if (section == null) {
@@ -300,7 +336,12 @@ class MainActivity : AppBaseActivity() {
         mainColumn.addView(content, 0, LinearLayout.LayoutParams(match, 0, 1f))
         applyBottomBarClearance(content)
         currentTopContent = content
+        // 새 화면(탭 전환 등)에서는 숨겨 둔 하단바를 다시 보여 준다
+        bottomBarBehavior()?.slideUp(binding.bottomNavWrapper)
     }
+
+    private fun bottomBarBehavior(): BottomBarScrollBehavior? =
+        (binding.bottomNavWrapper.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior as? BottomBarScrollBehavior
 
     // ---- 다른 섹션이 호출하는 Home 진입점 (실제 구현은 HomeSection) ----
     internal fun renderDashboard() = homeSection.renderDashboard()
@@ -323,5 +364,9 @@ class MainActivity : AppBaseActivity() {
         private const val KEY_SETTINGS_SCROLL_Y = "settings_scroll_y"
         /** 알림을 탭했을 때 어느 탭으로 이동할지 알려주는 인텐트 엑스트라 (MainSection.name 값). */
         internal const val EXTRA_OPEN_SECTION = "open_section"
+        /** 실제 블러 반경은 BlurView 기본 축소 배율(4)이 곱해진 값이다. */
+        private const val BOTTOM_NAV_BLUR_RADIUS = 20f
+        private const val SPLASH_EXIT_DURATION_MS = 300L
+        private const val SPLASH_EXIT_ICON_SCALE = 1.25f
     }
 }

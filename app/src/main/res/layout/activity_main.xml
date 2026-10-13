@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity" tools:theme="@style/Theme.Beardylog" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/beardyBackground">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+    <!-- 하단바 블러용 스냅샷 대상. 스냅샷에는 자식만 담기므로 이 배경은 MainActivity에서 setFrameClearDrawable로 깔아 준다 -->
+    <eightbitlab.com.blurview.BlurTarget android:id="@+id/blurTarget" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/beardyBackground">
+    <LinearLayout android:id="@+id/mainColumn" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
         <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingStart="20dp" android:paddingTop="20dp" android:paddingEnd="20dp" android:paddingBottom="20dp">
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
-                    <com.hsm.beardylog.ui.ShimmerTextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="BEARDY LOG" android:textColor="?attr/beardyAccent" android:textSize="30sp" android:textStyle="bold" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="BEARDY LOG" android:textColor="?attr/beardyAccent" android:textSize="30sp" android:textStyle="bold" />
                     <TextView android:id="@+id/currentDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/beardyTextSecondary" android:textSize="14sp" />
                 </LinearLayout>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:gravity="center_vertical">
@@ -16,7 +18,7 @@
                 </HorizontalScrollView>
                 <LinearLayout android:id="@+id/selectedProfileInfoRow" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:gravity="center_vertical" android:minHeight="44dp" android:orientation="horizontal">
                     <TextView android:id="@+id/selectedProfileInfo" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:maxLines="2" android:textColor="?attr/beardyTextSecondary" android:textSize="13sp" />
-                    <com.google.android.material.button.MaterialButton android:id="@+id/selectedProfileDetailButton" style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content" android:layout_height="40dp" android:minHeight="0dp" android:text="상세 보기 ›" android:visibility="gone" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/selectedProfileDetailButton" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginStart="12dp" android:minWidth="0dp" android:minHeight="0dp" android:insetTop="0dp" android:insetBottom="0dp" android:paddingStart="14dp" android:paddingEnd="14dp" android:text="상세 보기" android:textSize="13sp" android:textStyle="bold" android:visibility="gone" />
                 </LinearLayout>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="Today" android:textColor="?attr/beardyTextPrimary" android:textSize="19sp" android:textStyle="bold" />
                 <TextView android:id="@+id/weekRange" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:textColor="?attr/beardyTextSecondary" android:textSize="13sp" />
@@ -28,7 +30,7 @@
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="무게 추이" android:textColor="?attr/beardyTextPrimary" android:textSize="17sp" android:textStyle="bold" />
                             <TextView android:id="@+id/currentWeight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/beardyAccent" android:textSize="14sp" />
-                            <TextView android:id="@+id/weightDetailButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:clickable="true" android:contentDescription="무게 기록 상세 보기" android:focusable="true" android:text="@string/weight_detail_button" android:textColor="?attr/beardyAccent" android:textSize="13sp" android:textStyle="bold" />
+                            <com.google.android.material.button.MaterialButton android:id="@+id/weightDetailButton" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginStart="12dp" android:minWidth="0dp" android:minHeight="0dp" android:insetTop="0dp" android:insetBottom="0dp" android:paddingStart="14dp" android:paddingEnd="14dp" android:contentDescription="무게 기록 상세 보기" android:text="@string/weight_detail_button" android:textSize="13sp" android:textStyle="bold" />
                         </LinearLayout>
                         <TextView android:id="@+id/weightPeriodLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="최근 1개월" android:textColor="?attr/beardyTextSecondary" android:textSize="12sp" />
                         <FrameLayout android:layout_width="match_parent" android:layout_height="170dp" android:layout_marginTop="8dp">
@@ -45,9 +47,12 @@
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </LinearLayout>
-    <FrameLayout android:id="@+id/bottomNavWrapper" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:clipChildren="false" android:clipToPadding="false" android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingBottom="12dp">
-        <FrameLayout android:id="@+id/bottomNavPill" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_bottom_nav" android:clipToOutline="true" android:elevation="6dp" android:padding="4dp">
+    </eightbitlab.com.blurview.BlurTarget>
+    <!-- 큰 화면(가로 모드·태블릿)에서 바가 끝까지 늘어나 탭이 퍼지지 않도록 최대 폭을 두고 가운데 정렬.
+         아래로 스크롤하면 숨고 위로 스크롤하면 나타난다(BottomBarScrollBehavior) -->
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/bottomNavWrapper" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" app:layout_behavior="com.hsm.beardylog.ui.BottomBarScrollBehavior" android:clipChildren="false" android:clipToPadding="false" android:paddingStart="24dp" android:paddingEnd="24dp" android:paddingBottom="12dp">
+        <eightbitlab.com.blurview.BlurView android:id="@+id/bottomNavPill" android:layout_width="0dp" android:layout_height="wrap_content" app:layout_constraintWidth_max="440dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" android:background="@drawable/bg_bottom_nav" app:blurOverlayColor="@color/bottom_nav_blur_overlay" android:clipToOutline="true" android:elevation="6dp" android:padding="4dp">
             <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/bottomNavigation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="0dp" app:paddingBottomSystemWindowInsets="false" app:paddingLeftSystemWindowInsets="false" app:paddingRightSystemWindowInsets="false" app:itemBackground="@drawable/bg_bottom_nav_item" app:itemActiveIndicatorStyle="@style/BottomNavNoIndicator" app:itemPaddingTop="5dp" app:itemPaddingBottom="5dp" app:itemIconSize="20dp" app:itemTextAppearanceActive="@style/BottomNavLabelActive" app:itemTextAppearanceInactive="@style/BottomNavLabel" android:background="@android:color/transparent" android:elevation="0dp" app:elevation="0dp" app:menu="@menu/bottom_navigation" app:labelVisibilityMode="labeled" app:itemIconTint="@color/bottom_nav_tint" app:itemTextColor="@color/bottom_nav_tint" />
-        </FrameLayout>
-    </FrameLayout>
+        </eightbitlab.com.blurview.BlurView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

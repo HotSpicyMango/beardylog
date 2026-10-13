@@ -66,12 +66,24 @@
         <item name="beardyButtonPrimary">@color/palette_coral_button</item>
     </style>
 
+    <!-- 그레이 테마: 라이트는 그레이, 다크는 OLED용 완전한 검정 -->
     <style name="Theme.Beardylog.Slate" parent="Base.Theme.Beardylog">
         <item name="beardyAccent">@color/palette_slate_accent</item>
         <item name="beardyAccentContainer">@color/palette_slate_container</item>
         <item name="beardyBackground">@color/palette_slate_background</item>
         <item name="beardySurface">@color/palette_slate_surface</item>
         <item name="beardyButtonPrimary">@color/palette_slate_button</item>
+        <item name="beardyOnButtonPrimary">@color/palette_slate_on_button</item>
+        <item name="beardyTextPrimary">@color/palette_slate_text_primary</item>
+        <item name="beardyTextSecondary">@color/palette_slate_text_secondary</item>
+    </style>
+
+    <!-- 앱 시작 화면(MainActivity 전용). Android 8~11에서도 12+와 같은 로고 화면을 보여 준다.
+         배경은 기본 팔레트 색이며 values-night의 같은 색 이름으로 다크 모드도 따라간다. -->
+    <style name="Theme.Beardylog.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/palette_ocean_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Beardylog</item>
     </style>
 
     <style name="TextAppearance.Beardylog.WeightNumber" parent="TextAppearance.Material3.BodyLarge">

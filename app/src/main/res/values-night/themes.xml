@@ -66,12 +66,16 @@
         <item name="beardyButtonPrimary">@color/palette_coral_button</item>
     </style>
 
+    <!-- 그레이 테마: 라이트는 그레이, 다크는 OLED용 완전한 검정 -->
     <style name="Theme.Beardylog.Slate" parent="Base.Theme.Beardylog">
         <item name="beardyAccent">@color/palette_slate_accent</item>
         <item name="beardyAccentContainer">@color/palette_slate_container</item>
         <item name="beardyBackground">@color/palette_slate_background</item>
         <item name="beardySurface">@color/palette_slate_surface</item>
         <item name="beardyButtonPrimary">@color/palette_slate_button</item>
+        <item name="beardyOnButtonPrimary">@color/palette_slate_on_button</item>
+        <item name="beardyTextPrimary">@color/palette_slate_text_primary</item>
+        <item name="beardyTextSecondary">@color/palette_slate_text_secondary</item>
     </style>
 
     <style name="TextAppearance.Beardylog.WeightNumber" parent="TextAppearance.Material3.BodyLarge">
