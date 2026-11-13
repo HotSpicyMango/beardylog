@@ -64,7 +64,6 @@ internal class CalendarSection(private val activity: MainActivity) {
     private var calendarDetailEditor: CalendarDetailEditor? = null
     private var calendarMonthRenderGeneration = 0
     private val calendarDayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
-    private val calendarTaskLabels = listOf("수분 급여", "배변", "온욕", "구충제", "사육장 청소", "UVB 교체")
 
     private data class CalendarSummaryItem(val icon: Int?, val text: String)
     private data class CalendarDetailEditor(
@@ -139,7 +138,7 @@ internal class CalendarSection(private val activity: MainActivity) {
         }
         loadKoreanHolidays(currentCalendarMonth)
         fetchKoreanHolidaysIfNeeded(currentCalendarMonth)
-        calendarMonthEntries = calendarEntryStore.monthEntries(currentCalendarMonth, calendarTaskLabels)
+        calendarMonthEntries = calendarEntryStore.monthEntries(currentCalendarMonth, CalendarEntryStore.CHECKLIST_LABELS)
         scrollView.addView(content, ViewGroup.LayoutParams(match, wrap))
         // 넓은 화면: 왼쪽 칸에 달력, 오른쪽 칸에 요약·메모
         val wide = activity.isWide
@@ -278,7 +277,7 @@ internal class CalendarSection(private val activity: MainActivity) {
         }
         gridHost.postOnAnimation {
             if (renderGeneration != calendarMonthRenderGeneration || activity.currentSection != MainActivity.MainSection.CALENDAR) return@postOnAnimation
-            calendarMonthEntries = calendarEntryStore.monthEntries(currentCalendarMonth, calendarTaskLabels)
+            calendarMonthEntries = calendarEntryStore.monthEntries(currentCalendarMonth, CalendarEntryStore.CHECKLIST_LABELS)
             val monthGrid = calendarMonthGrid()
             gridHost.removeAllViews()
             gridHost.addView(monthGrid, FrameLayout.LayoutParams(match, wrap))
@@ -639,7 +638,7 @@ internal class CalendarSection(private val activity: MainActivity) {
         })
 
         content.addView(settingsCard {
-            calendarTaskLabels.forEach { label ->
+            CalendarEntryStore.CHECKLIST_LABELS.forEach { label ->
                 val checkBox = CheckBox(context).apply {
                     text = label
                     textSize = 16f
@@ -785,7 +784,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             .setTitle("이 날짜 기록 전체 삭제")
             .setMessage("${dateText}의 체크 항목과 병원·약·메모 기록을 모두 삭제할까요? 현재 편집 중인 내용도 사라집니다.")
             .setPositiveButton("전체 삭제") { _, _ ->
-                calendarEntryStore.deleteDate(date, calendarTaskLabels)
+                calendarEntryStore.deleteDate(date, CalendarEntryStore.CHECKLIST_LABELS)
                 returnToCalendarFromDetail(date, resetScroll = false)
                 showCalendarFeedback("기록을 삭제했습니다")
             }
@@ -934,7 +933,7 @@ internal class CalendarSection(private val activity: MainActivity) {
     private fun isHolidayDate(date: LocalDate): Boolean = koreanHolidays.containsKey(date)
 
     private fun calendarSummaryItems(date: LocalDate): List<CalendarSummaryItem> {
-        val checked = calendarTaskLabels.filter { calendarCheckedValue(date, it) }
+        val checked = CalendarEntryStore.CHECKLIST_LABELS.filter { calendarCheckedValue(date, it) }
         val hospital = calendarTextValue(date, "hospital").trim()
         val medicine = calendarTextValue(date, "medicine").trim()
         return buildList {

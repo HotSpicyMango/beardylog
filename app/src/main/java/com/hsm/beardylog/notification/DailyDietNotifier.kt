@@ -5,7 +5,6 @@ import androidx.core.app.NotificationCompat
 import com.hsm.beardylog.MainActivity.MainSection
 import com.hsm.beardylog.R
 import com.hsm.beardylog.data.AppDatabase
-import com.hsm.beardylog.data.CareSchedule
 import com.hsm.beardylog.data.Reptile
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -16,7 +15,6 @@ import java.time.format.DateTimeFormatter
  *  반복 일정(요일 지정)은 매주 다시 돌아오니 하루 놓쳐도 자연히 복구되지만, 특정 날짜 1회성
  *  일정은 그날 하루만 못 알리면 영영 놓친다. [DayCursor]로 최근 며칠을 같이 훑어 따라잡는다. */
 internal object DailyDietNotifier {
-    private val dietTypes = setOf("충식", "채식", "사료", "금식")
     private const val MAX_LOOKBACK_DAYS = 3L
     private val dateLabelFormat = DateTimeFormatter.ofPattern("M/d")
 
@@ -29,12 +27,12 @@ internal object DailyDietNotifier {
         val today = LocalDate.now()
         val pendingDates = cursor.pendingDates(today, MAX_LOOKBACK_DAYS)
 
-        val allDietSchedules = database.careScheduleDao().all().filter { it.careType in dietTypes }
+        val allDietSchedules = database.careScheduleDao().all().filter { it.isDiet() }
         val reptileNames = database.reptileDao().all().associateBy(Reptile::id)
 
         val perDateLines = pendingDates.mapNotNull { date ->
             val lines = allDietSchedules
-                .filter { isScheduledOn(it, date) }
+                .filter { it.isScheduledOn(date) }
                 .groupBy { it.reptileId }
                 .mapNotNull { (reptileId, daySchedules) ->
                     val name = reptileNames[reptileId]?.name ?: return@mapNotNull null
@@ -61,8 +59,4 @@ internal object DailyDietNotifier {
             .build()
         notifyIfPermitted(context, NotificationIds.TODAY_DIET, notification)
     }
-
-    private fun isScheduledOn(schedule: CareSchedule, date: LocalDate): Boolean =
-        schedule.repeatDayOfWeek == date.dayOfWeek.value ||
-            (schedule.repeatDayOfWeek == null && schedule.scheduledDate == date.toEpochDay())
 }

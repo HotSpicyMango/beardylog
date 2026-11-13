@@ -9,7 +9,7 @@ import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.io.File;
 
-@Database(entities = {Reptile.class, WeightRecord.class, CareSchedule.class, CareLog.class, BreedingRecord.class, MemorialPhoto.class, BreedingPair.class, Clutch.class, Hatchling.class}, version = 10, exportSchema = false)
+@Database(entities = {Reptile.class, WeightRecord.class, CareSchedule.class, CareLog.class, BreedingRecord.class, MemorialPhoto.class, BreedingPair.class, Clutch.class, Hatchling.class}, version = 10, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract ReptileDao reptileDao();
     public abstract WeightRecordDao weightRecordDao();
@@ -90,7 +90,7 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
-    private static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+    static final Migration MIGRATION_9_10 = new Migration(9, 10) {
         @Override public void migrate(SupportSQLiteDatabase database) {
             // 클러치 디데이 종료일. 기존 클러치는 NULL(진행 중)로 남는다.
             database.execSQL("ALTER TABLE `clutches` ADD COLUMN `ddayEndDate` INTEGER");

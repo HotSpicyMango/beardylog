@@ -17,7 +17,6 @@ import java.time.format.DateTimeFormatter
  *  워커가 특정 날짜 하루를 못 돌면(도즈, 강제종료 등) 그날 표시해둔 내용을 영영 놓치므로,
  *  [DayCursor]로 마지막 처리일 이후 최근 며칠을 훑어 따라잡는다. */
 internal object TodayScheduleNotifier {
-    private val checklistLabels = listOf("수분 급여", "배변", "온욕", "구충제", "사육장 청소", "UVB 교체")
     private const val MAX_LOOKBACK_DAYS = 3L
     private val dateLabelFormat = DateTimeFormatter.ofPattern("M/d")
 
@@ -31,7 +30,7 @@ internal object TodayScheduleNotifier {
         val pendingDates = cursor.pendingDates(today, MAX_LOOKBACK_DAYS)
 
         val perDateItems = pendingDates.mapNotNull { date ->
-            val marked = checklistLabels.filter { store.checkedValue(date, it) }
+            val marked = CalendarEntryStore.CHECKLIST_LABELS.filter { store.checkedValue(date, it) }
             val hospital = store.textValue(date, "hospital").trim()
             val items = buildList {
                 addAll(marked)

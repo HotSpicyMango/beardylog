@@ -80,7 +80,9 @@ class CalendarEntryStore(context: Context) {
 
     private fun key(date: LocalDate, field: String): String = "${date.toEpochDay()}_$field"
 
-    private companion object {
-        const val PREFS_NAME = "calendar_entries"
+    companion object {
+        /** 달력 날짜별 체크리스트 항목. 달력 화면과 오늘 일정 알림이 같은 목록을 쓴다. */
+        val CHECKLIST_LABELS = listOf("수분 급여", "배변", "온욕", "구충제", "사육장 청소", "UVB 교체")
+        private const val PREFS_NAME = "calendar_entries"
     }
 }

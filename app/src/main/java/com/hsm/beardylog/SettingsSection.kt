@@ -80,6 +80,7 @@ internal class SettingsSection(private val activity: MainActivity) {
      *  다이얼로그로 결론이 나면 그 자리에서 닫지만, 화면이 죽어 다이얼로그가 사라지는 경로는
      *  어느 콜백도 타지 않으므로 여기에 붙잡아 두고 release에서 정리한다. */
     private var pendingRestorePreview: ProfileBackupManager.RestorePreview? = null
+    private var restoreInProgress = false
     private val apkDownloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val completedId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
@@ -100,7 +101,8 @@ internal class SettingsSection(private val activity: MainActivity) {
      *  탭하면 설치로 이어지므로 여기서 취소하지는 않는다. */
     fun release() {
         unregisterApkReceiver()
-        closePendingRestorePreview()
+        // 복원 중에 닫으면 사진을 꺼내 쓰던 ZIP이 사라져 복원이 조용히 실패한다. 복원이 끝나면 아래 also 블록이 닫는다.
+        if (!restoreInProgress) closePendingRestorePreview()
     }
 
     private fun closePendingRestorePreview() {
@@ -772,6 +774,7 @@ internal class SettingsSection(private val activity: MainActivity) {
     }
 
     private fun restoreProfileBackup(preview: ProfileBackupManager.RestorePreview) {
+        restoreInProgress = true
         setDriveActionInProgress(true)
         driveBackupStatusText?.text = "프로필 데이터를 복원하는 중입니다…"
         activity.lifecycleScope.launch {
@@ -784,6 +787,7 @@ internal class SettingsSection(private val activity: MainActivity) {
                     }
                 }
             }.also {
+                restoreInProgress = false
                 closePendingRestorePreview()
             }.onSuccess { result ->
                 activity.selectedReptileId = null

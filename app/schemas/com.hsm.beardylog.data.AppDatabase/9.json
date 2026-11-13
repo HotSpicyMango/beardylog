@@ -1,0 +1,622 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 9,
+    "identityHash": "51d3ecf85080af190f5b2c6feb83222f",
+    "entities": [
+      {
+        "tableName": "reptiles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `species` TEXT, `morph` TEXT, `gender` TEXT, `referenceDate` INTEGER NOT NULL, `referenceDateType` TEXT, `photoUri` TEXT, `createdAt` INTEGER NOT NULL, `hatchingDate` INTEGER, `adoptionDate` INTEGER, `deathDate` INTEGER, `memorialNote` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "species",
+            "columnName": "species",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "morph",
+            "columnName": "morph",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referenceDate",
+            "columnName": "referenceDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "referenceDateType",
+            "columnName": "referenceDateType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "photoUri",
+            "columnName": "photoUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hatchingDate",
+            "columnName": "hatchingDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "adoptionDate",
+            "columnName": "adoptionDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "deathDate",
+            "columnName": "deathDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "memorialNote",
+            "columnName": "memorialNote",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "weight_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `reptileId` INTEGER NOT NULL, `recordedAt` INTEGER NOT NULL, `grams` REAL NOT NULL, FOREIGN KEY(`reptileId`) REFERENCES `reptiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reptileId",
+            "columnName": "reptileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordedAt",
+            "columnName": "recordedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grams",
+            "columnName": "grams",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_weight_records_reptileId",
+            "unique": false,
+            "columnNames": [
+              "reptileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_weight_records_reptileId` ON `${TABLE_NAME}` (`reptileId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "reptiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "reptileId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "care_schedules",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `reptileId` INTEGER NOT NULL, `scheduledDate` INTEGER NOT NULL, `careType` TEXT, `memo` TEXT, `repeatDayOfWeek` INTEGER, FOREIGN KEY(`reptileId`) REFERENCES `reptiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reptileId",
+            "columnName": "reptileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduledDate",
+            "columnName": "scheduledDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "careType",
+            "columnName": "careType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "memo",
+            "columnName": "memo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "repeatDayOfWeek",
+            "columnName": "repeatDayOfWeek",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_care_schedules_reptileId",
+            "unique": false,
+            "columnNames": [
+              "reptileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_care_schedules_reptileId` ON `${TABLE_NAME}` (`reptileId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "reptiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "reptileId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "care_logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `scheduleId` INTEGER NOT NULL, `completedDate` INTEGER NOT NULL, `status` TEXT, FOREIGN KEY(`scheduleId`) REFERENCES `care_schedules`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduleId",
+            "columnName": "scheduleId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedDate",
+            "columnName": "completedDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_care_logs_scheduleId",
+            "unique": false,
+            "columnNames": [
+              "scheduleId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_care_logs_scheduleId` ON `${TABLE_NAME}` (`scheduleId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "care_schedules",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "scheduleId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "breeding_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `maleReptileId` INTEGER, `maleName` TEXT, `femaleReptileId` INTEGER, `femaleName` TEXT, `layingDates` TEXT, `hatchingDates` TEXT, `memo` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maleReptileId",
+            "columnName": "maleReptileId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "maleName",
+            "columnName": "maleName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "femaleReptileId",
+            "columnName": "femaleReptileId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "femaleName",
+            "columnName": "femaleName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "layingDates",
+            "columnName": "layingDates",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "hatchingDates",
+            "columnName": "hatchingDates",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "memo",
+            "columnName": "memo",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "memorial_photos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `reptileId` INTEGER NOT NULL, `photoUri` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, FOREIGN KEY(`reptileId`) REFERENCES `reptiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reptileId",
+            "columnName": "reptileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoUri",
+            "columnName": "photoUri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "addedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_memorial_photos_reptileId",
+            "unique": false,
+            "columnNames": [
+              "reptileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_memorial_photos_reptileId` ON `${TABLE_NAME}` (`reptileId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "reptiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "reptileId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "breeding_pairs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `maleReptileId` INTEGER, `maleName` TEXT, `femaleReptileId` INTEGER, `femaleName` TEXT, `matingDate` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maleReptileId",
+            "columnName": "maleReptileId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "maleName",
+            "columnName": "maleName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "femaleReptileId",
+            "columnName": "femaleReptileId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "femaleName",
+            "columnName": "femaleName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "matingDate",
+            "columnName": "matingDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "clutches",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `pairId` INTEGER NOT NULL, `clutchNumber` INTEGER NOT NULL, `layingDate` INTEGER NOT NULL, `infertileEggCount` INTEGER NOT NULL, `fertileEggCount` INTEGER NOT NULL, `lostEggCount` INTEGER NOT NULL, `incubatorTemp` REAL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`pairId`) REFERENCES `breeding_pairs`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pairId",
+            "columnName": "pairId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clutchNumber",
+            "columnName": "clutchNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "layingDate",
+            "columnName": "layingDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "infertileEggCount",
+            "columnName": "infertileEggCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fertileEggCount",
+            "columnName": "fertileEggCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lostEggCount",
+            "columnName": "lostEggCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "incubatorTemp",
+            "columnName": "incubatorTemp",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_clutches_pairId",
+            "unique": false,
+            "columnNames": [
+              "pairId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_clutches_pairId` ON `${TABLE_NAME}` (`pairId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "breeding_pairs",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "pairId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "hatchlings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clutchId` INTEGER NOT NULL, `normalCount` INTEGER NOT NULL, `deathCount` INTEGER NOT NULL, `disabledCount` INTEGER NOT NULL, `disabledReason` TEXT, `midDropCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`clutchId`) REFERENCES `clutches`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clutchId",
+            "columnName": "clutchId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "normalCount",
+            "columnName": "normalCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deathCount",
+            "columnName": "deathCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "disabledCount",
+            "columnName": "disabledCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "disabledReason",
+            "columnName": "disabledReason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "midDropCount",
+            "columnName": "midDropCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_hatchlings_clutchId",
+            "unique": false,
+            "columnNames": [
+              "clutchId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_hatchlings_clutchId` ON `${TABLE_NAME}` (`clutchId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "clutches",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "clutchId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '51d3ecf85080af190f5b2c6feb83222f')"
+    ]
+  }
+}

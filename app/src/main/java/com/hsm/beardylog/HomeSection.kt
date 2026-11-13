@@ -121,7 +121,7 @@ internal class HomeSection(private val activity: MainActivity) {
         val weekScheduleEntries = (0..6).map { index ->
             val date = weekStart.plusDays(index.toLong())
             date to schedules.filter { schedule ->
-                schedule.reptileId == selected.id && isDietSchedule(schedule) && isScheduledOn(schedule, date)
+                schedule.reptileId == selected.id && schedule.isDiet() && schedule.isScheduledOn(date)
             }
         }
         val maxDietCount = weekScheduleEntries.maxOfOrNull { it.second.size }?.coerceAtLeast(1) ?: 1
@@ -305,16 +305,13 @@ internal class HomeSection(private val activity: MainActivity) {
         }
     }
 
-    private fun isDietSchedule(schedule: CareSchedule): Boolean = schedule.careType in setOf("충식", "채식", "사료", "금식")
 
-    private fun isScheduledOn(schedule: CareSchedule, date: LocalDate): Boolean =
-        schedule.repeatDayOfWeek == date.dayOfWeek.value || (schedule.repeatDayOfWeek == null && schedule.scheduledDate == date.toEpochDay())
 
     private fun renderPlannedCare(reptileId: Long) {
         activity.binding.plannedCareList.removeAllViews()
         val today = LocalDate.now()
         val occurrences = schedules
-            .filter { it.reptileId == reptileId && isDietSchedule(it) && isScheduledOn(it, today) }
+            .filter { it.reptileId == reptileId && it.isDiet() && it.isScheduledOn(today) }
             .map { it to today }
         if (occurrences.isEmpty()) {
             activity.binding.plannedCareList.addView(TextView(activity).apply {
@@ -348,12 +345,7 @@ internal class HomeSection(private val activity: MainActivity) {
         activity.lifecycleScope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    activity.database.careLogDao().deleteForDate(schedule.id, date)
-                    activity.database.careLogDao().insert(CareLog().apply {
-                        scheduleId = schedule.id
-                        completedDate = date
-                        this.status = status
-                    })
+                    activity.database.careLogDao().setStatus(schedule.id, date, status)
                 }
             }.onFailure {
                 activity.showBriefToast("상태를 저장하지 못했습니다")

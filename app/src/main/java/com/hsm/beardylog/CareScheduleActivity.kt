@@ -257,12 +257,7 @@ class CareScheduleActivity : AppBaseActivity() {
         lifecycleScope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    database.careLogDao().deleteForDate(schedule.id, date)
-                    database.careLogDao().insert(CareLog().apply {
-                        scheduleId = schedule.id
-                        completedDate = date
-                        this.status = status
-                    })
+                    database.careLogDao().setStatus(schedule.id, date, status)
                 }
             }.onFailure {
                 showBriefToast("상태를 저장하지 못했습니다")
