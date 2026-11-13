@@ -14,6 +14,10 @@ private val weightNumberPattern = Regex(
     "[+-]?\\d+(?:[.,]\\d+)?\\s*(?:kg|mg|g|개월|주|%)"
 )
 
+/** 무게 숫자 표기: 정수면 소수점 없이, 아니면 소수 한 자리. */
+fun formatGrams(value: Float): String =
+    if (value % 1f == 0f) value.toInt().toString() else "%.1f".format(java.util.Locale.US, value)
+
 fun CharSequence.withWeightNumberTypeface(context: Context): CharSequence {
     val styled = SpannableString(this)
     val typeface = context.resources.getFont(R.font.d2)

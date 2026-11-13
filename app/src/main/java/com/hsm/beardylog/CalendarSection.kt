@@ -995,25 +995,13 @@ internal class CalendarSection(private val activity: MainActivity) {
 
     // ---- 이 섹션 전용 소품 헬퍼 (MainActivity의 것과 동일한 구현을 그대로 둔다) ----
 
-    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int = activity.dp(value)
     private fun resColor(resId: Int): Int = activity.appColor(resId)
     private val match: Int get() = ViewGroup.LayoutParams.MATCH_PARENT
     private val wrap: Int get() = ViewGroup.LayoutParams.WRAP_CONTENT
 
     private fun settingsCard(verticalPaddingDp: Int = 16, content: LinearLayout.() -> Unit): View =
-        MaterialCardView(activity).apply {
-            radius = dp(18).toFloat()
-            cardElevation = 0f
-            setCardBackgroundColor(resColor(R.color.surface_card))
-            strokeColor = resColor(R.color.forest_light)
-            strokeWidth = dp(1)
-            layoutParams = LinearLayout.LayoutParams(match, wrap)
-            addView(LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(16), dp(verticalPaddingDp), dp(16), dp(verticalPaddingDp))
-                content()
-            })
-        }
+        activity.settingsCard(verticalPaddingDp, content)
 
     private fun LinearLayout.addSettingsDivider() {
         addView(View(context).apply {

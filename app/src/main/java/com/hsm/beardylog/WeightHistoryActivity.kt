@@ -1,5 +1,6 @@
 package com.hsm.beardylog
 
+import com.hsm.beardylog.ui.formatGrams
 import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.View
@@ -22,7 +23,6 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.abs
 
 class WeightHistoryActivity : AppBaseActivity() {
@@ -321,13 +321,6 @@ class WeightHistoryActivity : AppBaseActivity() {
             .show()
     }
 
-    private fun formatGrams(value: Float): String = if (value % 1f == 0f) {
-        value.toInt().toString()
-    } else {
-        String.format(Locale.US, "%.1f", value)
-    }
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     companion object {
         const val EXTRA_REPTILE_ID = "reptile_id"

@@ -351,7 +351,6 @@ class CareScheduleActivity : AppBaseActivity() {
         memo = binding.memoInput.text?.toString()?.trim().orEmpty()
     )
 
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     companion object {
         const val EXTRA_REPTILE_ID = "reptile_id"

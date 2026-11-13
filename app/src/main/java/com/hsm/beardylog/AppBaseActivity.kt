@@ -1,5 +1,8 @@
 package com.hsm.beardylog
 
+import com.google.android.material.card.MaterialCardView
+import android.widget.LinearLayout
+import android.view.ViewGroup
 import android.content.Context
 import android.graphics.Rect
 import android.os.Bundle
@@ -178,6 +181,24 @@ internal fun BottomSheetDialog.openFullyExpanded() {
     behavior.skipCollapsed = true
     behavior.state = BottomSheetBehavior.STATE_EXPANDED
 }
+
+internal fun Context.dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+/** 설정·달력 화면이 같이 쓰는 테두리 카드. */
+internal fun Context.settingsCard(verticalPaddingDp: Int = 16, content: LinearLayout.() -> Unit): View =
+    MaterialCardView(this).apply {
+        radius = dp(18).toFloat()
+        cardElevation = 0f
+        setCardBackgroundColor(appColor(R.color.surface_card))
+        strokeColor = appColor(R.color.forest_light)
+        strokeWidth = dp(1)
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(verticalPaddingDp), dp(16), dp(verticalPaddingDp))
+            content()
+        })
+    }
 
 /** 버튼 높이 2단계: 화면 폭 버튼(LARGE)과 카드 안 작은 버튼(COMPACT). */
 internal const val BUTTON_HEIGHT_LARGE_DP = 44

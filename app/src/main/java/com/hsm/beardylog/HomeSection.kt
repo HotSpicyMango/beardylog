@@ -1,5 +1,6 @@
 package com.hsm.beardylog
 
+import com.hsm.beardylog.ui.formatGrams
 import android.content.Intent
 import android.view.Gravity
 import android.view.View
@@ -360,7 +361,6 @@ internal class HomeSection(private val activity: MainActivity) {
         }
     }
 
-    private fun formatGrams(value: Float): String = if (value % 1f == 0f) value.toInt().toString() else "%.1f".format(java.util.Locale.US, value)
 
     private fun gridCell(row: Int, column: Int): android.widget.GridLayout.LayoutParams = android.widget.GridLayout.LayoutParams(
         android.widget.GridLayout.spec(row), android.widget.GridLayout.spec(column)
@@ -392,7 +392,7 @@ internal class HomeSection(private val activity: MainActivity) {
         activity.startActivity(Intent(activity, WeightHistoryActivity::class.java).putExtra(WeightHistoryActivity.EXTRA_REPTILE_ID, reptileId))
     }
 
-    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int = activity.dp(value)
 
     companion object {
         private const val PROFILE_GRID_ROWS = 2

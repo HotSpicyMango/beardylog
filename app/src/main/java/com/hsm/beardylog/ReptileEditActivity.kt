@@ -247,7 +247,6 @@ class ReptileEditActivity : AppBaseActivity() {
         }
     }
 
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     companion object {
         const val EXTRA_ID = "reptile_id"

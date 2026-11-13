@@ -276,7 +276,6 @@ class MemorialAlbumActivity : AppBaseActivity() {
             }.show()
     }
 
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
     private fun resColor(resId: Int): Int = appColor(resId)
 
     companion object {

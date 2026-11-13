@@ -1058,7 +1058,7 @@ internal class BreedingSection(private val activity: MainActivity) {
 
     // ---- 이 섹션 전용 소품 헬퍼 (MainActivity의 것과 동일한 구현을 그대로 둔다) ----
 
-    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int = activity.dp(value)
     private fun resColor(resId: Int): Int = activity.appColor(resId)
     private val match: Int get() = ViewGroup.LayoutParams.MATCH_PARENT
     private val wrap: Int get() = ViewGroup.LayoutParams.WRAP_CONTENT

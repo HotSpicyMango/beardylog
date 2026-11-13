@@ -150,7 +150,7 @@ class WeightChartView @JvmOverloads constructor(context: Context, attrs: Attribu
         left + (right - left) * index / values.lastIndex.toFloat()
     }
 
-    private fun formatWeight(value: Float): String = if (value % 1f == 0f) "${value.toInt()}g" else "%.1fg".format(java.util.Locale.US, value)
+    private fun formatWeight(value: Float): String = "${formatGrams(value)}g"
 
     private companion object {
         // 실기기 GL_MAX_TEXTURE_SIZE는 보통 8192 이상이지만, 넉넉히 아래로 잡아둔다.

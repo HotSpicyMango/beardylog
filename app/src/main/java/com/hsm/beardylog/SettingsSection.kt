@@ -36,7 +36,6 @@ import com.google.android.gms.common.api.Scope
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.noties.markwon.Markwon
 import com.bumptech.glide.Glide
@@ -971,19 +970,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
 
     private fun settingsCard(verticalPaddingDp: Int = 16, content: LinearLayout.() -> Unit): View =
-        MaterialCardView(activity).apply {
-            radius = dp(18).toFloat()
-            cardElevation = 0f
-            setCardBackgroundColor(resColor(R.color.surface_card))
-            strokeColor = resColor(R.color.forest_light)
-            strokeWidth = dp(1)
-            layoutParams = LinearLayout.LayoutParams(match, wrap)
-            addView(LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(16), dp(verticalPaddingDp), dp(16), dp(verticalPaddingDp))
-                content()
-            })
-        }
+        activity.settingsCard(verticalPaddingDp, content)
 
     private fun LinearLayout.addAppInfoDivider(marginDp: Int = 6) {
         addView(View(context).apply {
@@ -1165,7 +1152,7 @@ internal class SettingsSection(private val activity: MainActivity) {
 
     // ---- 이 섹션 전용 소품 헬퍼 (MainActivity의 것과 동일한 구현을 그대로 둔다) ----
 
-    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int = activity.dp(value)
     private fun resColor(resId: Int): Int = activity.appColor(resId)
 
     /** SwitchMaterial 기본 색이 테마를 안 따라가서, 켜짐/꺼짐 색을 현재 앱 테마에 맞춰 직접 지정한다. */
