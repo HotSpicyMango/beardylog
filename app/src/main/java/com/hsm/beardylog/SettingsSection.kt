@@ -133,7 +133,10 @@ internal class SettingsSection(private val activity: MainActivity) {
             val authorizationResult = Identity.getAuthorizationClient(activity)
                 .getAuthorizationResultFromIntent(data)
             val accessToken = authorizationResult.accessToken
-                ?: throw IllegalStateException("Google Drive 접근 토큰을 받지 못했습니다")
+            if (accessToken == null) {
+                failDriveAction(IllegalStateException("Google Drive 접근 토큰을 받지 못했습니다"))
+                return
+            }
             runDriveAction(action, accessToken)
         } catch (error: ApiException) {
             failDriveAction(error)
@@ -176,7 +179,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "설정"
             textSize = 28f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            typeface = resources.getFont(R.font.pretendard_bold)
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
@@ -190,7 +193,7 @@ internal class SettingsSection(private val activity: MainActivity) {
     private fun settingsSectionTitle(title: String): View = TextView(activity).apply {
         text = title
         textSize = 17f
-        setTypeface(typeface, android.graphics.Typeface.BOLD)
+        typeface = resources.getFont(R.font.pretendard_bold)
         setTextColor(resColor(R.color.text_primary))
         setPadding(0, dp(18), 0, dp(10))
     }
@@ -199,7 +202,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "화면 모드"
             textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            typeface = resources.getFont(R.font.pretendard_bold)
             setTextColor(resColor(R.color.text_primary))
         })
         addView(displayModeToggle(), LinearLayout.LayoutParams(match, wrap).apply {
@@ -209,7 +212,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "앱 테마색"
             textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            typeface = resources.getFont(R.font.pretendard_bold)
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
@@ -293,7 +296,7 @@ internal class SettingsSection(private val activity: MainActivity) {
                 addView(TextView(context).apply {
                     text = palette.displayName
                     textSize = 15f
-                    setTypeface(typeface, if (selected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+                    typeface = resources.getFont(if (selected) R.font.pretendard_bold else R.font.pretendard)
                     setTextColor(resColor(R.color.text_primary))
                 })
                 addView(TextView(context).apply {
@@ -308,7 +311,7 @@ internal class SettingsSection(private val activity: MainActivity) {
                 text = if (selected) "✓" else ""
                 textSize = 20f
                 gravity = Gravity.CENTER
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.forest))
             }, LinearLayout.LayoutParams(dp(32), dp(40)))
 
@@ -501,7 +504,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "Google Drive"
             textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            typeface = resources.getFont(R.font.pretendard_bold)
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
@@ -540,7 +543,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         driveEmptyStateHintText = TextView(context).apply {
             text = "재설치한 경우 백업을 누르지 말고 먼저 Google Drive에서 복원하세요"
             textSize = 13f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            typeface = resources.getFont(R.font.pretendard_bold)
             setTextColor(resColor(R.color.forest))
             setPadding(0, 0, 0, dp(12))
             visibility = if (activity.allReptiles.isEmpty()) View.VISIBLE else View.GONE
@@ -920,7 +923,7 @@ internal class SettingsSection(private val activity: MainActivity) {
             text = "\"우리는 모두 마음 한켠에 조그만 생명이 주고 간 다정함을 품고 살아갑니다.\""
             textSize = 10.5f
             gravity = Gravity.CENTER
-            setTypeface(typeface, android.graphics.Typeface.NORMAL)
+            typeface = resources.getFont(R.font.pretendard)
             setTextColor(resColor(R.color.text_secondary))
             setPadding(dp(0), dp(8), dp(0), dp(4))
         })
@@ -935,7 +938,7 @@ internal class SettingsSection(private val activity: MainActivity) {
                 addView(TextView(context).apply {
                     text = title
                     textSize = 16f
-                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    typeface = resources.getFont(R.font.pretendard_bold)
                     setTextColor(resColor(R.color.text_primary))
                 })
                 addView(TextView(context).apply {
@@ -1011,11 +1014,7 @@ internal class SettingsSection(private val activity: MainActivity) {
             activity.packageManager.getPackageInfo(activity.packageName, 0)
         }
 
-    private fun versionCode(info: PackageInfo): Long =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else {
-            @Suppress("DEPRECATION")
-            info.versionCode.toLong()
-        }
+    private fun versionCode(info: PackageInfo): Long = info.longVersionCode
 
     /** GitHub Releases는 공개 저장소라 로그인 없이 바로 확인할 수 있어서, 자동 시작 체크(silent)와
      *  수동 "지금 업데이트 확인" 버튼이 똑같은 함수를 쓴다 — showNoUpdateToast로 결과 알림 여부만 다르다. */

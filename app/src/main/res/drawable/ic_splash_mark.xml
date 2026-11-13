@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 앱 아이콘의 B를 벡터로 옮긴 것(화면에서 크게 보여도 또렷하도록). 뷰포트는 ic_launcher_foreground와 같은 432. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="300dp"
+    android:viewportWidth="432"
+    android:viewportHeight="432">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M152.5,144.5L245,144.5C268,144.5 283,158 283,178C283,194 276,206 263,212C278,218 286.5,230 286.5,246C286.5,268 270,283.5 246,283.5L152.5,283.5ZM198,175L226,175C233,175 238,180 238,186.5C238,193 233,198 226,198L198,198ZM198,227L229,227C236,227 241,232 241,238.5C241,245 236,250 229,250L198,250Z" />
+</vector>

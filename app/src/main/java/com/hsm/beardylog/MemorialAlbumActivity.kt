@@ -109,9 +109,10 @@ class MemorialAlbumActivity : AppBaseActivity() {
     private fun renderGrid() {
         binding.photoGrid.removeAllViews()
         binding.emptyText.visibility = if (photos.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
-        val columns = 3
+        // 넓은 화면에서 사진이 커지기만 하지 않도록, 폰과 비슷한 칸 크기로 열 수를 늘린다
+        val columns = ((contentWidthPx - dp(40)) / dp(MIN_PHOTO_CELL_DP)).coerceAtLeast(3)
         binding.photoGrid.columnCount = columns
-        val cellSize = (resources.displayMetrics.widthPixels - dp(40) - dp(8) * (columns - 1)) / columns
+        val cellSize = (contentWidthPx - dp(40) - dp(8) * (columns - 1)) / columns
         photos.forEachIndexed { index, photo ->
             val cell = ImageView(this).apply {
                 scaleType = ImageView.ScaleType.CENTER_CROP
@@ -281,6 +282,7 @@ class MemorialAlbumActivity : AppBaseActivity() {
     companion object {
         const val EXTRA_REPTILE_ID = "reptile_id"
         private const val MAX_PHOTOS_PER_PICK = 20
+        private const val MIN_PHOTO_CELL_DP = 120
         private const val ENTRANCE_ANIMATION_MS = 220L
         private const val DISMISS_ANIMATION_MS = 200L
         private const val SPRING_BACK_ANIMATION_MS = 220L

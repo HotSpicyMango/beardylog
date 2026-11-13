@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 class WeightChartView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
     private val density = resources.displayMetrics.density
     private val numberTypeface = resources.getFont(com.hsm.beardylog.R.font.d2)
-    private val regularTypeface = resources.getFont(com.hsm.beardylog.R.font.pretendard_regular)
+    private val regularTypeface = resources.getFont(com.hsm.beardylog.R.font.pretendard)
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.appColor(com.hsm.beardylog.R.color.forest_light); strokeWidth = density }
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.appColor(com.hsm.beardylog.R.color.forest); strokeWidth = 3f * density; style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
     private val pointPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.appColor(com.hsm.beardylog.R.color.forest) }

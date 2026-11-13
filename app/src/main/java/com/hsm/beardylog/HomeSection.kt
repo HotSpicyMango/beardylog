@@ -53,6 +53,12 @@ internal class HomeSection(private val activity: MainActivity) {
         activity.selectedReptileId = activity.appSettings.lastSelectedProfileId?.takeIf { id -> activity.reptiles.any { it.id == id } }
     }
 
+    /** 화면이 다시 만들어질 때(분할 화면 열고 닫기, 회전) 보던 프로필을 유지한다. */
+    internal fun restoreSelection(reptileId: Long?) {
+        activity.selectedReptileId = reptileId
+        initialProfileSelectionResolved = true
+    }
+
     internal fun restoreLastSelectedProfile() {
         activity.selectedReptileId = activity.appSettings.lastSelectedProfileId?.takeIf { id -> activity.reptiles.any { it.id == id } }
         renderProfiles()
@@ -169,7 +175,8 @@ internal class HomeSection(private val activity: MainActivity) {
             maxLines = 1
             includeFontPadding = false
             setTextColor(activity.appColor(R.color.forest))
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            // 테마 폰트에 BOLD를 합성하면 일부 기기에서 시스템 폰트로 대체되어 굵은 파일을 직접 지정한다
+            typeface = activity.resources.getFont(R.font.pretendard_bold)
             gravity = Gravity.CENTER
         })
         activity.binding.profileGrid.addView(addItem, gridCell(0, 0))
@@ -223,7 +230,8 @@ internal class HomeSection(private val activity: MainActivity) {
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 includeFontPadding = false
                 setTextColor(if (isSelectedProfile) activity.appColor(R.color.forest) else activity.appColor(R.color.text_secondary))
-                setTypeface(typeface, if (isSelectedProfile) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+                // 테마 폰트에 스타일을 합성하면 시스템 폰트로 대체되어 굵기별 패밀리를 직접 지정한다
+                typeface = activity.resources.getFont(if (isSelectedProfile) R.font.pretendard_bold else R.font.pretendard)
                 setPadding(0, dp(3), 0, 0)
                 gravity = Gravity.CENTER
             })
@@ -364,7 +372,7 @@ internal class HomeSection(private val activity: MainActivity) {
     private fun profileGridColumns(totalItems: Int): Int {
         val balancedColumns = ((totalItems + PROFILE_GRID_ROWS - 1) / PROFILE_GRID_ROWS).coerceAtLeast(1)
         val scrollWidth = (activity.binding.profileGrid.parent as? View)?.width?.takeIf { it > 0 }
-            ?: (activity.resources.displayMetrics.widthPixels - dp(PROFILE_GRID_FALLBACK_HORIZONTAL_PADDING_DP))
+            ?: (activity.contentWidthPx - dp(PROFILE_GRID_FALLBACK_HORIZONTAL_PADDING_DP))
         val visibleColumns = (scrollWidth / dp(PROFILE_GRID_CELL_WIDTH_DP)).coerceAtLeast(1)
         return balancedColumns.coerceAtLeast(visibleColumns)
     }

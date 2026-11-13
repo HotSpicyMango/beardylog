@@ -2,7 +2,6 @@ package com.hsm.beardylog
 
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Bundle
 import android.text.InputType
 import android.text.SpannableString
@@ -44,7 +43,6 @@ internal class CalendarSection(private val activity: MainActivity) {
     private val calendarState = CalendarSectionState()
     private var currentCalendarMonth by calendarState::currentMonth
     private var calendarSelectedDate by calendarState::selectedDate
-    private var calendarLastSelectedDate by calendarState::lastSelectedDate
     private var calendarDetailDate by calendarState::detailDate
     private var calendarScrollY by calendarState::scrollY
 
@@ -143,22 +141,32 @@ internal class CalendarSection(private val activity: MainActivity) {
         fetchKoreanHolidaysIfNeeded(currentCalendarMonth)
         calendarMonthEntries = calendarEntryStore.monthEntries(currentCalendarMonth, calendarTaskLabels)
         scrollView.addView(content, ViewGroup.LayoutParams(match, wrap))
-        content.addView(calendarMonthHeader(), LinearLayout.LayoutParams(match, wrap).apply {
+        // 넓은 화면: 왼쪽 칸에 달력, 오른쪽 칸에 요약·메모
+        val wide = activity.isWide
+        val monthColumn = if (wide) LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL } else content
+        val previewColumn = if (wide) LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL } else content
+        if (wide) {
+            scrollView.setTag(R.id.wide_two_pane, true)
+            content.orientation = LinearLayout.HORIZONTAL
+            content.addView(monthColumn, LinearLayout.LayoutParams(0, wrap, 1.2f))
+            content.addView(previewColumn, LinearLayout.LayoutParams(0, wrap, 1f).apply { leftMargin = dp(28) })
+        }
+        monthColumn.addView(calendarMonthHeader(), LinearLayout.LayoutParams(match, wrap).apply {
             leftMargin = alignedContentMargin
             rightMargin = alignedContentMargin
         })
         val monthGrid = calendarMonthGrid()
-        content.addView(FrameLayout(activity).apply {
+        monthColumn.addView(FrameLayout(activity).apply {
             calendarMonthGridHost = this
             addView(monthGrid, FrameLayout.LayoutParams(match, wrap))
         }, LinearLayout.LayoutParams(match, wrap))
         calendarMonthGridView = monthGrid
-        content.addView(calendarSummaryPreview(), LinearLayout.LayoutParams(match, wrap).apply {
-            topMargin = dp(28)
+        previewColumn.addView(calendarSummaryPreview(), LinearLayout.LayoutParams(match, wrap).apply {
+            topMargin = if (wide) 0 else dp(28)
             leftMargin = alignedContentMargin
             rightMargin = alignedContentMargin
         })
-        content.addView(calendarMemoPreview(), LinearLayout.LayoutParams(match, wrap).apply {
+        previewColumn.addView(calendarMemoPreview(), LinearLayout.LayoutParams(match, wrap).apply {
             topMargin = dp(12)
             leftMargin = alignedContentMargin
             rightMargin = alignedContentMargin
@@ -173,7 +181,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "달력"
                 textSize = 28f
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             val showTodayButton = shouldShowTodayButton()
@@ -181,7 +189,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = LocalDate.now().dayOfMonth.toString()
                 textSize = 16f
                 gravity = Gravity.CENTER
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.button_on_primary))
                 setBackgroundResource(R.drawable.bg_today_button)
                 // 고정 크기 대신 최소 크기로 두어, 시스템 글꼴을 키워도 숫자가 잘리지 않고 버튼이 커지게 한다
@@ -215,7 +223,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 contentDescription = "이전 달"
                 textSize = 34f
                 gravity = Gravity.CENTER
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.forest))
                 setBackgroundResource(R.drawable.bg_week_day)
                 isClickable = true
@@ -230,7 +238,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = currentCalendarMonth.format(DateTimeFormatter.ofPattern("yyyy년 M월"))
                 textSize = 22f
                 gravity = Gravity.CENTER
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.text_primary))
                 calendarMonthTitleText = this
             }, LinearLayout.LayoutParams(0, wrap, 1f))
@@ -240,7 +248,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 contentDescription = "다음 달"
                 textSize = 34f
                 gravity = Gravity.CENTER
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.forest))
                 setBackgroundResource(R.drawable.bg_week_day)
                 isClickable = true
@@ -308,7 +316,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                     text = label
                     gravity = Gravity.CENTER
                     textSize = 13f
-                    setTypeface(typeface, Typeface.BOLD)
+                    typeface = resources.getFont(R.font.pretendard_bold)
                     setTextColor(resColor(if (index == 0) R.color.danger else R.color.text_secondary))
                 }, calendarCell(0, index, dp(34)))
             }
@@ -357,7 +365,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             text = date.dayOfMonth.toString()
             textSize = 15f
             gravity = Gravity.CENTER
-            setTypeface(typeface, Typeface.BOLD)
+            typeface = resources.getFont(R.font.pretendard_bold)
         })
         val monthEntry = calendarMonthEntries[date]
         val cellIcons = calendarCellIcons(monthEntry)
@@ -446,7 +454,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "일정 요약"
                 textSize = 17f
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             addView(TextView(context).apply {
@@ -472,7 +480,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "메모"
                 textSize = 17f
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(wrap, wrap))
             addView(LinearLayout(context).apply {
@@ -615,7 +623,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = "달력"
                 textSize = 24f
                 gravity = Gravity.CENTER
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             addView(View(context), LinearLayout.LayoutParams(dp(48), dp(44)))
@@ -623,7 +631,7 @@ internal class CalendarSection(private val activity: MainActivity) {
         content.addView(TextView(activity).apply {
             text = calendarDetailTitle(date)
             textSize = 26f
-            setTypeface(typeface, Typeface.BOLD)
+            typeface = resources.getFont(R.font.pretendard_bold)
             setTextColor(resColor(R.color.text_primary))
             gravity = Gravity.CENTER
             setPadding(0, dp(12), 0, dp(18))
@@ -652,7 +660,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 addView(TextView(context).apply {
                     text = "메모"
                     textSize = 17f
-                    setTypeface(typeface, Typeface.BOLD)
+                    typeface = resources.getFont(R.font.pretendard_bold)
                     setTextColor(resColor(R.color.text_primary))
                 }, LinearLayout.LayoutParams(0, wrap, 1f))
                 addView(
@@ -804,13 +812,14 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = message
                 textSize = 14f
                 gravity = Gravity.CENTER
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = resources.getFont(R.font.pretendard_bold)
                 setTextColor(resColor(R.color.surface_card))
                 setBackgroundResource(R.drawable.bg_calendar_feedback)
                 setPadding(dp(24), dp(12), dp(24), dp(12))
                 alpha = 0f
             }
-            val bottomNavHeight = activity.binding.bottomNavWrapper.height.takeIf { it > 0 } ?: dp(86)
+            // 넓은 화면은 하단바가 없으니 화면 아래 가장자리 위에 띄운다
+            val bottomNavHeight = activity.binding.bottomNavWrapper?.let { it.height.takeIf { h -> h > 0 } ?: dp(86) } ?: 0
             activity.binding.root.addView(
                 feedback,
                 androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(wrap, wrap).apply {
@@ -820,7 +829,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 }
             )
             // 스크롤로 하단바가 내려가 있으면 알림도 그만큼 내려 바 자리 위에 띄운다
-            feedback.translationY = activity.binding.bottomNavWrapper.translationY
+            feedback.translationY = activity.binding.bottomNavWrapper?.translationY ?: 0f
             calendarSavedFeedbackView = feedback
             feedback.bringToFront()
             feedback.animate().alpha(1f).setDuration(120L).start()

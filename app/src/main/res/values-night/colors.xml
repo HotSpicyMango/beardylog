@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="black">#FFFFFFFF</color>
-    <color name="white">#FF0D171C</color>
 
     <!-- Static fallbacks for non-themed contexts and previews. -->
     <color name="forest">#FFD9C19A</color>

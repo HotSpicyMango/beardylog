@@ -5,7 +5,7 @@ import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.navigation.NavigationBarView
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import org.junit.After
@@ -42,7 +42,7 @@ class MainActivityStateTest {
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                activity.findViewById<BottomNavigationView>(R.id.bottomNavigation).selectedItemId = R.id.nav_calendar
+                activity.findViewById<NavigationBarView>(R.id.bottomNavigation).selectedItemId = R.id.nav_calendar
                 activity.findViewById<TextView>(R.id.calendar_next_month_button).performClick()
             }
 
@@ -51,7 +51,7 @@ class MainActivityStateTest {
             scenario.onActivity { activity ->
                 assertEquals(
                     R.id.nav_calendar,
-                    activity.findViewById<BottomNavigationView>(R.id.bottomNavigation).selectedItemId
+                    activity.findViewById<NavigationBarView>(R.id.bottomNavigation).selectedItemId
                 )
                 assertEquals(expectedMonth, activity.findViewById<TextView>(R.id.calendar_month_title).text.toString())
 
@@ -59,7 +59,7 @@ class MainActivityStateTest {
 
                 assertEquals(
                     R.id.nav_home,
-                    activity.findViewById<BottomNavigationView>(R.id.bottomNavigation).selectedItemId
+                    activity.findViewById<NavigationBarView>(R.id.bottomNavigation).selectedItemId
                 )
             }
         }

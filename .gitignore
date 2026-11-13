@@ -27,3 +27,7 @@ local.properties
 
 # Firebase config (contains a project-specific API key; keep local, don't publish)
 /app/google-services.json
+
+# Local AI tool state
+/.claude/
+/.serena/

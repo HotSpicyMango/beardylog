@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/beardyBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:importantForAccessibility="noHideDescendants">
+
+    <View
+        android:id="@+id/splash_glow"
+        android:layout_width="480dp"
+        android:layout_height="480dp"
+        android:layout_gravity="center"
+        android:alpha="0"
+        android:background="@drawable/bg_splash_glow"
+        android:backgroundTint="?attr/beardyAccentContainer" />
+
+    <!-- 네 이미지는 같은 432 캔버스 기준이라 겹치면 B 위치가 정확히 맞는다 -->
+    <FrameLayout
+        android:id="@+id/splash_mark"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_gravity="center">
+
+        <ImageView
+            android:id="@+id/splash_blur_large"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:src="@drawable/splash_blur_large"
+            android:tint="?attr/beardyAccent" />
+
+        <ImageView
+            android:id="@+id/splash_blur_medium"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:src="@drawable/splash_blur_medium"
+            android:tint="?attr/beardyAccent" />
+
+        <ImageView
+            android:id="@+id/splash_blur_small"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:src="@drawable/splash_blur_small"
+            android:tint="?attr/beardyAccent" />
+
+        <ImageView
+            android:id="@+id/splash_sharp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:src="@drawable/ic_splash_mark"
+            android:tint="?attr/beardyAccent" />
+    </FrameLayout>
+</FrameLayout>

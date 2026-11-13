@@ -10,6 +10,8 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -24,6 +26,17 @@ abstract class AppBaseActivity : AppCompatActivity() {
      *  그래야 인셋만큼의 빈 여백이 배경색 위에 따로 생기지 않고, 바 배경이 그대로 이어져
      *  실제 바 높이 + 인셋만큼만 커져서 3버튼/제스처 모드 모두에서 자연스러운 높이가 된다. */
     protected open val bottomInsetTarget: View? = null
+    /** 사진 자르기처럼 화면을 끝까지 쓰는 곳만 끈다. */
+    protected open val limitContentWidth: Boolean = true
+    /** 내용이 실제로 차지하는 폭. 큰 화면에서는 CONTENT_MAX_WIDTH_DP로 제한되므로 화면 폭 대신 이 값으로 칸 크기를 계산한다. */
+    internal val contentWidthPx: Int
+        get() {
+            val screenWidth = resources.displayMetrics.widthPixels
+            if (!limitContentWidth) return screenWidth
+            return minOf(screenWidth, (CONTENT_MAX_WIDTH_DP * resources.displayMetrics.density).toInt())
+        }
+    /** 폴드 펼침·태블릿처럼 창 폭이 600dp 이상인지. layout-w600dp 리소스와 같은 기준이다. */
+    internal val isWide: Boolean get() = resources.getBoolean(R.bool.is_wide)
     private var briefToast: Toast? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +54,7 @@ abstract class AppBaseActivity : AppCompatActivity() {
 
     override fun setContentView(view: View?) {
         super.setContentView(view)
+        view?.let(::applyContentWidthLimit)
         if (useEdgeToEdge) view?.let(::installSystemBarInsets)
     }
 
@@ -51,6 +65,13 @@ abstract class AppBaseActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             overridePendingTransition(R.anim.activity_pop_enter, R.anim.activity_pop_exit)
         }
+    }
+
+    /** 태블릿·가로 모드에서 내용이 끝까지 늘어나지 않도록 루트 좌우 여백으로 가운데에 모은다.
+     *  shortcut: 화면 생성 시 한 번만 계산한다. 재생성 없이 창 크기만 바뀌면 다음 생성 때 맞춰지며, 멀티 윈도우를 지원할 때 레이아웃 변경 감지로 바꾼다. */
+    private fun applyContentWidthLimit(root: View) {
+        val side = (resources.displayMetrics.widthPixels - contentWidthPx) / 2
+        root.setPadding(root.paddingLeft + side, root.paddingTop, root.paddingRight + side, root.paddingBottom)
     }
 
     private fun installSystemBarInsets(root: View) {
@@ -151,9 +172,18 @@ internal fun View.dismissKeyboardOnOutsideTouch(vararg inputs: EditText) {
     }
 }
 
+/** 시트 기본 높이는 "화면 높이 - 화면 폭 × 9/16"이라 가로 모드에서는 입력 폼이 거의 안 보일 만큼 낮아진다.
+ *  처음부터 끝까지 펼쳐서 띄우고, 아래로 내리면 중간에 멈추지 않고 바로 닫히게 한다. */
+internal fun BottomSheetDialog.openFullyExpanded() {
+    behavior.skipCollapsed = true
+    behavior.state = BottomSheetBehavior.STATE_EXPANDED
+}
+
 /** 버튼 높이 2단계: 화면 폭 버튼(LARGE)과 카드 안 작은 버튼(COMPACT). */
 internal const val BUTTON_HEIGHT_LARGE_DP = 44
 internal const val BUTTON_HEIGHT_COMPACT_DP = 36
+
+private const val CONTENT_MAX_WIDTH_DP = 720
 
 /** 버튼 높이를 [heightDp] 이상으로 맞춘다. 고정 높이가 아니라 최소 높이라서 시스템 글꼴을 키우면 글자에 맞춰 늘어난다.
  *  MaterialButton 기본 위아래 inset(투명 여백 6dp)도 없애 최소 높이가 그대로 보이는 높이가 되게 한다.

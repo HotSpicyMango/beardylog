@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 class CropActivity : AppBaseActivity() {
+    override val limitContentWidth = false
     private lateinit var binding: ActivityCropBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {

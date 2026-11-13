@@ -1,21 +1,23 @@
 package com.hsm.beardylog
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.content.pm.PackageManager
 import android.os.Build
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AccelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.splashscreen.SplashScreenViewProvider
+import androidx.core.animation.doOnEnd
 import androidx.core.view.ViewCompat
 import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +29,7 @@ import com.hsm.beardylog.data.WeightChartPreferences
 import com.hsm.beardylog.notification.NotificationSettings
 import com.hsm.beardylog.ui.BottomBarScrollBehavior
 import com.hsm.beardylog.databinding.ActivityMainBinding
+import com.hsm.beardylog.databinding.ViewStartupIntroBinding
 import com.hsm.beardylog.viewmodel.ReptileViewModel
 import com.hsm.beardylog.viewmodel.ReptileViewModelFactory
 import java.time.LocalDate
@@ -35,6 +38,8 @@ class MainActivity : AppBaseActivity() {
     internal lateinit var binding: ActivityMainBinding
     override val bottomInsetTarget: View?
         get() = if (::binding.isInitialized) binding.bottomNavWrapper else null
+    // 넓은 화면은 레일 옆 영역에서 화면별로 최대 폭을 정하므로(applyWideContentWidth) 루트 전체를 좁히지 않는다
+    override val limitContentWidth: Boolean get() = !isWide
     private lateinit var viewModel: ReptileViewModel
     internal var reptiles: List<Reptile> = emptyList()
     internal var allReptiles: List<Reptile> = emptyList()
@@ -64,12 +69,12 @@ class MainActivity : AppBaseActivity() {
     ) { /* 거부해도 앱은 정상 동작하고, 알림만 안 뜬다. 별도 안내 없이 넘어간다. */ }
     override fun onCreate(savedInstanceState: Bundle?) {
         // AppBaseActivity가 super.onCreate에서 선택한 팔레트 테마를 입히므로, 그보다 먼저 설치해야 덮어쓰이지 않는다
-        val splashScreen = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-        // 테마 변경 등으로 다시 만들어질 때는 퇴장 애니메이션을 생략한다
-        if (savedInstanceState == null) splashScreen.setOnExitAnimationListener(::playSplashExitAnimation)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // 테마 변경 등으로 다시 만들어질 때는 인트로를 생략한다
+        if (savedInstanceState == null) playStartupIntro()
         setupRootContent()
         registerBackHandler()
         restoreMainState(savedInstanceState)
@@ -106,20 +111,38 @@ class MainActivity : AppBaseActivity() {
         if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    /** 시작 화면이 닫힐 때 로고는 살짝 커지고 화면 전체는 서서히 사라진다. */
-    private fun playSplashExitAnimation(provider: SplashScreenViewProvider) {
-        provider.iconView.animate()
-            .scaleX(SPLASH_EXIT_ICON_SCALE)
-            .scaleY(SPLASH_EXIT_ICON_SCALE)
-            .setInterpolator(AccelerateInterpolator())
-            .setDuration(SPLASH_EXIT_DURATION_MS)
-            .start()
-        provider.view.animate()
-            .alpha(0f)
-            .setDuration(SPLASH_EXIT_DURATION_MS)
-            .withEndAction { provider.remove() }
-            .start()
+    /** 흐릿한 빛 덩어리가 로고로 맺히는 시작 인트로. 색은 선택한 테마를 따른다.
+     *  RenderEffect가 없는 API 31 미만에서도 같도록, 미리 블러 처리한 이미지들을 크로스페이드한다. */
+    private fun playStartupIntro() {
+        val decorView = window.decorView as ViewGroup
+        val intro = ViewStartupIntroBinding.inflate(layoutInflater, decorView, false)
+        decorView.addView(intro.root)
+
+        val animator = ValueAnimator.ofFloat(0f, STARTUP_INTRO_DURATION_MS).apply {
+            duration = STARTUP_INTRO_DURATION_MS.toLong()
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                val t = it.animatedValue as Float // 경과 시간(ms)
+                intro.splashGlow.alpha = progress(t, 100f, 500f) * (1f - progress(t, 700f, 1200f))
+                intro.splashBlurLarge.alpha = progress(t, 150f, 500f) * (1f - progress(t, 600f, 850f))
+                intro.splashBlurMedium.alpha = progress(t, 450f, 700f) * (1f - progress(t, 800f, 1050f))
+                intro.splashBlurSmall.alpha = progress(t, 700f, 900f) * (1f - progress(t, 1000f, 1250f))
+                intro.splashSharp.alpha = progress(t, 900f, 1100f)
+                // 살짝 큰 상태에서 제자리로 내려앉았다가, 퇴장할 때 다시 커지며 화면 전체가 사라진다
+                val settle = 1f - progress(t, 100f, 1250f)
+                val exit = progress(t, 1500f, STARTUP_INTRO_DURATION_MS)
+                val scale = (1f + 0.2f * settle * settle) * (1f + 0.25f * exit)
+                intro.splashMark.scaleX = scale
+                intro.splashMark.scaleY = scale
+                intro.root.alpha = 1f - exit
+            }
+            doOnEnd { decorView.removeView(intro.root) }
+        }
+        // 첫 프레임을 그린 뒤 시작해야 초기화 작업에 앞부분이 끊기지 않는다
+        intro.root.post { animator.start() }
     }
+
+    private fun progress(t: Float, from: Float, to: Float) = ((t - from) / (to - from)).coerceIn(0f, 1f)
 
     private fun setupRootContent() {
         mainColumn = binding.mainColumn
@@ -127,10 +150,10 @@ class MainActivity : AppBaseActivity() {
         currentTopContent = homeContent
         applyBottomBarClearance(homeContent)
         // 하단바가 콘텐츠 위에 떠 있으므로, 바 높이(인셋 포함)가 정해지거나 바뀔 때마다 현재 화면 여백을 다시 맞춘다.
-        binding.bottomNavWrapper.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+        binding.bottomNavWrapper?.addOnLayoutChangeListener { wrapper, _, top, _, bottom, _, oldTop, _, oldBottom ->
             if (bottom - top != oldBottom - oldTop) {
                 // 레이아웃 진행 중 다른 뷰의 패딩을 바꾸지 않도록 다음 프레임으로 미룸
-                binding.bottomNavWrapper.post { currentTopContent?.let(::applyBottomBarClearance) }
+                wrapper.post { currentTopContent?.let(::applyBottomBarClearance) }
             }
         }
     }
@@ -139,14 +162,25 @@ class MainActivity : AppBaseActivity() {
      *  스크롤 뷰는 clipToPadding을 꺼서 콘텐츠가 바 뒤로 비쳐 보이도록 하고,
      *  중첩 스크롤을 켜서 스크롤 방향에 따라 바가 숨거나 나타나게 한다(BottomBarScrollBehavior). */
     private fun applyBottomBarClearance(content: View) {
+        applyWideContentWidth(content)
+        val wrapper = binding.bottomNavWrapper ?: return // 넓은 화면은 레일이 옆에 있어 가릴 것이 없다
         val base = content.getTag(R.id.bottom_bar_clearance_base) as? Int
             ?: content.paddingBottom.also { content.setTag(R.id.bottom_bar_clearance_base, it) }
-        content.setPadding(content.paddingLeft, content.paddingTop, content.paddingRight, base + binding.bottomNavWrapper.height)
+        content.setPadding(content.paddingLeft, content.paddingTop, content.paddingRight, base + wrapper.height)
         if (content is ViewGroup && (content is ScrollView || content is NestedScrollView || content is RecyclerView)) {
             content.clipToPadding = false
             // 일반 ScrollView는 중첩 스크롤이 기본으로 꺼져 있어 CoordinatorLayout까지 스크롤이 전달되지 않는다
             content.isNestedScrollingEnabled = true
         }
+    }
+
+    /** 넓은 화면에서 두 칸 화면은 넓게, 한 칸 화면은 폰처럼 읽기 좋은 폭으로 가운데에 둔다. */
+    private fun applyWideContentWidth(content: View) {
+        val params = mainColumn.layoutParams as? ConstraintLayout.LayoutParams ?: return
+        val twoPane = content === homeContent || content.getTag(R.id.wide_two_pane) == true
+        val maxWidthDp = if (twoPane) WIDE_TWO_PANE_MAX_WIDTH_DP else WIDE_SINGLE_PANE_MAX_WIDTH_DP
+        params.matchConstraintMaxWidth = (maxWidthDp * resources.displayMetrics.density).toInt()
+        mainColumn.layoutParams = params
     }
 
     private fun registerBackHandler() {
@@ -160,6 +194,9 @@ class MainActivity : AppBaseActivity() {
     private fun restoreMainState(savedInstanceState: Bundle?) {
         calendarSection.restore(savedInstanceState)
         settingsScrollY = savedInstanceState?.getInt(KEY_SETTINGS_SCROLL_Y, 0) ?: 0
+        if (savedInstanceState?.containsKey(KEY_SELECTED_REPTILE_ID) == true) {
+            homeSection.restoreSelection(savedInstanceState.getLong(KEY_SELECTED_REPTILE_ID).takeIf { it != NO_SELECTION })
+        }
     }
 
     private fun setupDataLayer() {
@@ -183,9 +220,10 @@ class MainActivity : AppBaseActivity() {
         // BlurTarget 스냅샷엔 자기 배경이 빠지므로, 배경을 먼저 깔지 않으면 빈 영역이 투명하게 블러되어
         // 그 아래 선명한 콘텐츠(카드 테두리 등)가 비쳐 보인다.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            binding.bottomNavPill.setupWith(binding.blurTarget)
-                .setFrameClearDrawable(binding.blurTarget.background)
-                .setBlurRadius(BOTTOM_NAV_BLUR_RADIUS)
+            val blurTarget = binding.blurTarget
+            if (blurTarget != null) binding.bottomNavPill?.setupWith(blurTarget)
+                ?.setFrameClearDrawable(blurTarget.background)
+                ?.setBlurRadius(BOTTOM_NAV_BLUR_RADIUS)
         }
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             val section = sectionForMenuItem(item.itemId)
@@ -233,6 +271,7 @@ class MainActivity : AppBaseActivity() {
         outState.putString(KEY_CURRENT_SECTION, currentSection.name)
         calendarSection.save(outState)
         outState.putInt(KEY_SETTINGS_SCROLL_Y, settingsScrollY)
+        outState.putLong(KEY_SELECTED_REPTILE_ID, selectedReptileId ?: NO_SELECTION)
         super.onSaveInstanceState(outState)
     }
 
@@ -337,11 +376,11 @@ class MainActivity : AppBaseActivity() {
         applyBottomBarClearance(content)
         currentTopContent = content
         // 새 화면(탭 전환 등)에서는 숨겨 둔 하단바를 다시 보여 준다
-        bottomBarBehavior()?.slideUp(binding.bottomNavWrapper)
+        binding.bottomNavWrapper?.let { wrapper -> bottomBarBehavior()?.slideUp(wrapper) }
     }
 
     private fun bottomBarBehavior(): BottomBarScrollBehavior? =
-        (binding.bottomNavWrapper.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior as? BottomBarScrollBehavior
+        (binding.bottomNavWrapper?.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior as? BottomBarScrollBehavior
 
     // ---- 다른 섹션이 호출하는 Home 진입점 (실제 구현은 HomeSection) ----
     internal fun renderDashboard() = homeSection.renderDashboard()
@@ -362,11 +401,14 @@ class MainActivity : AppBaseActivity() {
     companion object {
         private const val KEY_CURRENT_SECTION = "current_section"
         private const val KEY_SETTINGS_SCROLL_Y = "settings_scroll_y"
+        private const val KEY_SELECTED_REPTILE_ID = "selected_reptile_id"
+        private const val NO_SELECTION = -1L
         /** 알림을 탭했을 때 어느 탭으로 이동할지 알려주는 인텐트 엑스트라 (MainSection.name 값). */
         internal const val EXTRA_OPEN_SECTION = "open_section"
         /** 실제 블러 반경은 BlurView 기본 축소 배율(4)이 곱해진 값이다. */
         private const val BOTTOM_NAV_BLUR_RADIUS = 20f
-        private const val SPLASH_EXIT_DURATION_MS = 300L
-        private const val SPLASH_EXIT_ICON_SCALE = 1.25f
+        private const val STARTUP_INTRO_DURATION_MS = 1800f
+        private const val WIDE_TWO_PANE_MAX_WIDTH_DP = 1040
+        private const val WIDE_SINGLE_PANE_MAX_WIDTH_DP = 720
     }
 }

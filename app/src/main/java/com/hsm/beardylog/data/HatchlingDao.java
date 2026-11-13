@@ -12,7 +12,6 @@ import java.util.List;
 public interface HatchlingDao {
     @Query("SELECT * FROM hatchlings ORDER BY clutchId, id") LiveData<List<Hatchling>> observeAll();
     @Query("SELECT * FROM hatchlings ORDER BY clutchId, id") List<Hatchling> all();
-    @Query("SELECT * FROM hatchlings WHERE clutchId = :clutchId ORDER BY id") List<Hatchling> forClutch(long clutchId);
     @Insert long insert(Hatchling hatchling);
     @Insert void insertAll(List<Hatchling> hatchlings);
     @Update void update(Hatchling hatchling);

@@ -3,6 +3,7 @@ package com.hsm.beardylog
 import android.app.Application
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.window.embedding.RuleController
 import com.hsm.beardylog.data.AppDatabase
 import com.hsm.beardylog.data.PhotoStore
 import com.hsm.beardylog.notification.AppNotificationChannel
@@ -21,6 +22,8 @@ class BeardylogApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         AppCompatDelegate.setDefaultNightMode(AppThemePreferences.nightMode(this))
+        // 폴드 펼침·태블릿에서 상세 화면을 메인 옆 칸으로 연다. 지원하지 않는 기기에서는 규칙이 무시되고 기존처럼 전체 화면으로 열린다
+        RuleController.getInstance(this).setRules(RuleController.parseRules(this, R.xml.split_config))
         val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             if (isMiuiPerfLogNoise(throwable)) {

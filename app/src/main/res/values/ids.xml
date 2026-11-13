@@ -4,4 +4,5 @@
     <item name="calendar_month_title" type="id" />
     <item name="calendar_next_month_button" type="id" />
     <item name="bottom_bar_clearance_base" type="id" />
+    <item name="wide_two_pane" type="id" />
 </resources>

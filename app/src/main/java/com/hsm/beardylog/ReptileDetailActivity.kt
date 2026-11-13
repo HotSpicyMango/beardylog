@@ -146,6 +146,7 @@ class ReptileDetailActivity : AppBaseActivity() {
         }
         sheetBinding.root.dismissKeyboardOnOutsideTouch(sheetBinding.noteInput)
         dialog.setContentView(sheetBinding.root)
+        dialog.openFullyExpanded()
         dialog.show()
     }
 

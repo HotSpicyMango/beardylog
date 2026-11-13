@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 폴드 펼침·태블릿처럼 창 폭이 600dp 이상이면 values-w600dp에서 true. layout-w600dp와 같은 기준 -->
+    <bool name="is_wide">false</bool>
+</resources>

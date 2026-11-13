@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 넓은 화면(폭 600dp 이상)에서 메인에서 연 상세 화면을 오른쪽 칸에 띄운다.
+     상세에서 다시 연 화면(수정, 케어 일정, 사진 자르기)은 같은 오른쪽 칸 위에 쌓인다. -->
+<resources xmlns:window="http://schemas.android.com/apk/res-auto">
+    <SplitPairRule
+        window:splitRatio="0.5"
+        window:splitMinWidthDp="600"
+        window:finishPrimaryWithSecondary="never"
+        window:finishSecondaryWithPrimary="always"
+        window:clearTop="true">
+        <SplitPairFilter
+            window:primaryActivityName=".MainActivity"
+            window:secondaryActivityName=".ReptileDetailActivity" />
+        <SplitPairFilter
+            window:primaryActivityName=".MainActivity"
+            window:secondaryActivityName=".ReptileEditActivity" />
+        <SplitPairFilter
+            window:primaryActivityName=".MainActivity"
+            window:secondaryActivityName=".WeightHistoryActivity" />
+        <SplitPairFilter
+            window:primaryActivityName=".MainActivity"
+            window:secondaryActivityName=".MemorialAlbumActivity" />
+    </SplitPairRule>
+</resources>

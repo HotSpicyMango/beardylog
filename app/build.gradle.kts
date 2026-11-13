@@ -28,11 +28,10 @@ android {
 
     defaultConfig {
         applicationId = "com.hsm.beardylog"
-        minSdk = 26
+        minSdk = 28
         targetSdk = 37
-        versionCode = 24
-        versionName = "1.1.4"
-//      10/9
+        versionCode = 26
+        versionName = "1.1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KOREA_HOLIDAY_API_KEY", "\"${localProperties.getProperty("KOREA_HOLIDAY_API_KEY", "")}\"")
@@ -63,6 +62,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.window)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.room.runtime)
@@ -74,7 +74,6 @@ dependencies {
     implementation(libs.material)
     implementation("com.google.android.gms:play-services-auth:21.6.0")
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     implementation(platform("com.google.firebase:firebase-bom:34.17.0"))
     implementation("com.google.firebase:firebase-analytics")

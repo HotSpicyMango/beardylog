@@ -8,6 +8,4 @@ class ReptileRepository(private val dao: ReptileDao) {
     fun observeById(id: Long) = dao.observeById(id)
     suspend fun insert(reptile: Reptile) = withContext(Dispatchers.IO) { dao.insert(reptile) }
     suspend fun update(reptile: Reptile) = withContext(Dispatchers.IO) { dao.update(reptile) }
-    suspend fun delete(reptile: Reptile) = withContext(Dispatchers.IO) { dao.delete(reptile) }
-    suspend fun deleteById(id: Long) = withContext(Dispatchers.IO) { dao.deleteById(id) }
 }

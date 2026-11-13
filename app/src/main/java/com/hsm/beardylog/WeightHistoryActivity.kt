@@ -218,6 +218,7 @@ class WeightHistoryActivity : AppBaseActivity() {
         }
         sheetBinding.root.dismissKeyboardOnOutsideTouch(sheetBinding.weightInput)
         dialog.setContentView(sheetBinding.root)
+        dialog.openFullyExpanded()
         dialog.setOnShowListener {
             sheetBinding.weightInput.requestFocus()
         }
