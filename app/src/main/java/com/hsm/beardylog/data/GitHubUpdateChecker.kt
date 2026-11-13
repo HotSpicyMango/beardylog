@@ -8,10 +8,7 @@ import java.nio.charset.StandardCharsets
 
 /** GitHub Releases를 앱 업데이트 소스로 쓴다. 공개 저장소라 로그인/토큰 없이 REST API만으로 확인할 수 있어서,
  *  기존 Firebase App Distribution(테스터 로그인 필요)보다 오픈 베타에 훨씬 가볍게 맞는다. */
-class GitHubUpdateChecker(
-    private val owner: String = REPO_OWNER,
-    private val repo: String = REPO_NAME
-) {
+class GitHubUpdateChecker {
     data class ReleaseInfo(
         val versionName: String,
         val notes: String,
@@ -23,7 +20,7 @@ class GitHubUpdateChecker(
      *  전체 목록(/releases, 최신순)에서 채널에 맞는 첫 항목을 직접 찾는다.
      *  @param includePrereleases 베타 채널이면 true — 프리릴리즈도 업데이트 대상에 포함한다. */
     fun fetchLatestRelease(includePrereleases: Boolean): ReleaseInfo? {
-        val json = request("https://api.github.com/repos/$owner/$repo/releases?per_page=$RELEASE_LIST_PAGE_SIZE")
+        val json = request("https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases?per_page=$RELEASE_LIST_PAGE_SIZE")
         val releases = JSONArray(json)
         for (index in 0 until releases.length()) {
             val release = releases.optJSONObject(index) ?: continue

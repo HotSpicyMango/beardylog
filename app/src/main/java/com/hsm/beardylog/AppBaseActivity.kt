@@ -23,7 +23,6 @@ import androidx.core.view.WindowInsetsCompat
 
 /** Common edge-to-edge behavior for every app screen. */
 abstract class AppBaseActivity : AppCompatActivity() {
-    protected open val useEdgeToEdge: Boolean = true
     /** 화면에 하단 고정 바(예: BottomNavigationView)가 있으면 이 뷰를 반환해서
      *  내비게이션 바 인셋(3버튼/제스처)을 루트가 아니라 그 바 자체에 패딩으로 적용한다.
      *  그래야 인셋만큼의 빈 여백이 배경색 위에 따로 생기지 않고, 바 배경이 그대로 이어져
@@ -45,7 +44,7 @@ abstract class AppBaseActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(AppThemePreferences.selected(this).styleRes)
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, !useEdgeToEdge)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = appColor(R.color.surface_alt)
         window.navigationBarColor = appColor(R.color.surface_alt)
         // 뒤로 갈 때 화면이 옆으로 살짝 밀려나며 사라지는 가벼운 전환 애니메이션.
@@ -58,7 +57,7 @@ abstract class AppBaseActivity : AppCompatActivity() {
     override fun setContentView(view: View?) {
         super.setContentView(view)
         view?.let(::applyContentWidthLimit)
-        if (useEdgeToEdge) view?.let(::installSystemBarInsets)
+        view?.let(::installSystemBarInsets)
     }
 
     // API 34 미만은 overrideActivityTransition이 없어서, finish() 직후 레거시 방식으로 같은 애니메이션을 적용한다.
