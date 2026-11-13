@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/beardyBackground"
@@ -29,7 +30,8 @@
             android:layout_height="match_parent"
             android:alpha="0"
             android:src="@drawable/splash_blur_large"
-            android:tint="?attr/beardyAccent" />
+            android:importantForAccessibility="no"
+            app:tint="?attr/beardyAccent" />
 
         <ImageView
             android:id="@+id/splash_blur_medium"
@@ -37,7 +39,8 @@
             android:layout_height="match_parent"
             android:alpha="0"
             android:src="@drawable/splash_blur_medium"
-            android:tint="?attr/beardyAccent" />
+            android:importantForAccessibility="no"
+            app:tint="?attr/beardyAccent" />
 
         <ImageView
             android:id="@+id/splash_blur_small"
@@ -45,7 +48,8 @@
             android:layout_height="match_parent"
             android:alpha="0"
             android:src="@drawable/splash_blur_small"
-            android:tint="?attr/beardyAccent" />
+            android:importantForAccessibility="no"
+            app:tint="?attr/beardyAccent" />
 
         <ImageView
             android:id="@+id/splash_sharp"
@@ -53,6 +57,7 @@
             android:layout_height="match_parent"
             android:alpha="0"
             android:src="@drawable/ic_splash_mark"
-            android:tint="?attr/beardyAccent" />
+            android:importantForAccessibility="no"
+            app:tint="?attr/beardyAccent" />
     </FrameLayout>
 </FrameLayout>
