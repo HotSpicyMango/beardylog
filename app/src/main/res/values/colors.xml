@@ -12,6 +12,7 @@
     <color name="text_primary">#15232B</color>
     <color name="text_secondary">#5E707A</color>
     <color name="danger">#BA1A1A</color>
+    <color name="saturday">#1E5BD8</color>
 
     <color name="palette_text_primary">#15232B</color>
     <color name="palette_text_secondary">#5E707A</color>
@@ -58,4 +59,10 @@
     <color name="palette_slate_on_button">#FFFFFFFF</color>
     <color name="palette_slate_text_primary">#111111</color>
     <color name="palette_slate_text_secondary">#6E6E6E</color>
+
+    <!-- 사진 없는 개체의 기본 이미지(무채색, 테마 무관) -->
+    <color name="placeholder_background">#E5E5E5</color>
+    <color name="placeholder_stroke">#9A9A9A</color>
+    <color name="placeholder_eye">#FFFFFF</color>
+    <color name="placeholder_pupil">#4A4A4A</color>
 </resources>

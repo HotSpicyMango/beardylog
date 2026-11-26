@@ -9,7 +9,6 @@ import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -57,7 +56,6 @@ internal class CalendarSection(private val activity: MainActivity) {
     private var calendarMemoBodyText: TextView? = null
     private var calendarTodayButton: TextView? = null
     private var calendarSavedFeedbackView: TextView? = null
-    private var calendarMonthGridView: View? = null
     private var calendarMonthGridHost: FrameLayout? = null
     private var calendarMonthTitleText: TextView? = null
     private var calendarDetailDateTitleText: TextView? = null
@@ -159,7 +157,6 @@ internal class CalendarSection(private val activity: MainActivity) {
             calendarMonthGridHost = this
             addView(monthGrid, FrameLayout.LayoutParams(match, wrap))
         }, LinearLayout.LayoutParams(match, wrap))
-        calendarMonthGridView = monthGrid
         previewColumn.addView(calendarSummaryPreview(), LinearLayout.LayoutParams(match, wrap).apply {
             topMargin = if (wide) 0 else dp(28)
             leftMargin = alignedContentMargin
@@ -261,8 +258,6 @@ internal class CalendarSection(private val activity: MainActivity) {
     }
 
     private fun changeCalendarMonth(offset: Long) {
-        calendarMonthGridView?.animate()?.cancel()
-        val direction = if (offset > 0) 1 else -1
         calendarState.moveMonth(offset)
         loadKoreanHolidays(currentCalendarMonth)
         fetchKoreanHolidaysIfNeeded(currentCalendarMonth)
@@ -281,21 +276,6 @@ internal class CalendarSection(private val activity: MainActivity) {
             val monthGrid = calendarMonthGrid()
             gridHost.removeAllViews()
             gridHost.addView(monthGrid, FrameLayout.LayoutParams(match, wrap))
-            animateCalendarMonthGrid(monthGrid, direction)
-        }
-    }
-
-    private fun animateCalendarMonthGrid(monthGrid: View, direction: Int) {
-        calendarMonthGridView = monthGrid
-        monthGrid.translationX = dp(24).toFloat() * direction
-        monthGrid.post {
-            if (!monthGrid.isAttachedToWindow) return@post
-            monthGrid.animate()
-                .translationX(0f)
-                .setDuration(150L)
-                .setInterpolator(DecelerateInterpolator())
-                .withLayer()
-                .start()
         }
     }
 
@@ -316,7 +296,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                     gravity = Gravity.CENTER
                     textSize = 13f
                     typeface = resources.pretendardBold()
-                    setTextColor(resColor(if (index == 0) R.color.danger else R.color.text_secondary))
+                    setTextColor(resColor(when (index) { 0 -> R.color.danger; 6 -> R.color.saturday; else -> R.color.text_secondary }))
                 }, calendarCell(0, index, dp(34)))
             }
             val firstDay = currentCalendarMonth.atDay(1)
@@ -420,7 +400,8 @@ internal class CalendarSection(private val activity: MainActivity) {
 
     private fun calendarDateTextColor(date: LocalDate): Int = when {
         isHolidayDate(date) || date.dayOfWeek == DayOfWeek.SUNDAY -> resColor(R.color.danger)
-        date.dayOfWeek == DayOfWeek.SATURDAY || date == LocalDate.now() -> resColor(R.color.forest)
+        date.dayOfWeek == DayOfWeek.SATURDAY -> resColor(R.color.saturday)
+        date == LocalDate.now() -> resColor(R.color.forest)
         else -> resColor(R.color.text_primary)
     }
 
@@ -923,7 +904,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             val start = title.lastIndexOf(weekdayText)
             val color = when {
                 isHolidayDate(date) || date.dayOfWeek == DayOfWeek.SUNDAY -> resColor(R.color.danger)
-                date.dayOfWeek == DayOfWeek.SATURDAY -> resColor(R.color.forest)
+                date.dayOfWeek == DayOfWeek.SATURDAY -> resColor(R.color.saturday)
                 else -> resColor(R.color.text_primary)
             }
             setSpan(ForegroundColorSpan(color), start, start + weekdayText.length, 0)

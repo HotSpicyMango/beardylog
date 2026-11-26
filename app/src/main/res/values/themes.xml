@@ -97,7 +97,7 @@
 
     <!-- Chip은 XML fontFamily를 무시하고 textAppearance 폰트로 글자를 그리므로 여기서 지정한다. -->
     <style name="TextAppearance.Beardylog.PeriodChip" parent="TextAppearance.Material3.LabelLarge">
-        <item name="fontFamily">@font/d2</item>
-        <item name="android:fontFamily">@font/d2</item>
+        <item name="fontFamily">@font/pretendard</item>
+        <item name="android:fontFamily">@font/pretendard</item>
     </style>
 </resources>

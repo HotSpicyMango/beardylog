@@ -11,6 +11,7 @@ import android.content.pm.PackageInfo
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
@@ -21,6 +22,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -175,10 +177,72 @@ internal class SettingsSection(private val activity: MainActivity) {
     /** 넓은 화면은 메뉴와 하위 화면이 함께 보이므로 뒤로가기로 닫을 하위 화면이 없다. */
     fun closeDetail(): Boolean {
         if (activity.isWide || openPage == null) return false
+        val menu = backPreview
+        val page = activity.currentTopContent
+        if (menu == null || page == null) {
+            openPage = null
+            activity.settingsScrollY = 0
+            activity.replaceTopContent(createContentView())
+            return true
+        }
+        // 예측 뒤로가기 제스처를 끝까지 한 경우: 남은 이동을 마저 보여준 뒤, 뒤에 깔아 둔 메뉴를 그대로 본 화면으로 쓴다
+        backPreview = null
+        page.animate().translationX(page.width.toFloat()).setDuration(BACK_FINISH_DURATION_MS).start()
+        menu.animate().translationX(0f).setDuration(BACK_FINISH_DURATION_MS).withEndAction {
+            (menu.parent as? ViewGroup)?.removeView(menu)
+            page.translationX = 0f
+            // 애니메이션 사이에 다른 탭으로 옮겼거나 이미 닫혔으면 손대지 않는다
+            if (activity.currentTopContent !== page || openPage == null) return@withEndAction
+            openPage = null
+            activity.settingsScrollY = 0
+            activity.replaceTopContent(menu)
+        }.start()
+        return true
+    }
+
+    /** 예측 뒤로가기 제스처 동안 하위 화면 뒤에 깔아 두는 메뉴 화면. 제스처가 끝나거나 취소되면 null. */
+    private var backPreview: View? = null
+
+    fun onBackStarted() {
+        if (activity.isWide || openPage == null || backPreview != null) return
+        val page = activity.currentTopContent ?: return
+        val host = activity.binding.blurTarget ?: return
+        if (page.width == 0) return
+        val savedPage = openPage
+        val pageScrollY = activity.settingsScrollY
         openPage = null
         activity.settingsScrollY = 0
-        activity.replaceTopContent(createContentView())
-        return true
+        val menu = createContentView()
+        openPage = savedPage
+        activity.settingsScrollY = pageScrollY
+        // 메뉴가 하위 화면과 정확히 같은 자리에 오도록, 하위 화면의 위치를 host 기준 좌표로 옮겨 쓴다
+        val bounds = Rect(0, 0, page.width, page.height)
+        host.offsetDescendantRectToMyCoords(page, bounds)
+        host.addView(menu, 0, FrameLayout.LayoutParams(page.width, page.height).apply {
+            leftMargin = bounds.left
+            topMargin = bounds.top
+        })
+        backPreview = menu
+        onBackProgressed(0f)
+    }
+
+    fun onBackProgressed(progress: Float) {
+        val menu = backPreview ?: return
+        val page = activity.currentTopContent ?: return
+        val width = page.width.toFloat()
+        page.translationX = width * progress
+        menu.translationX = -width * BACK_PARALLAX * (1f - progress)
+    }
+
+    fun onBackCancelled() {
+        val menu = backPreview ?: return
+        backPreview = null
+        val page = activity.currentTopContent
+        val width = (page?.width ?: menu.width).toFloat()
+        page?.animate()?.translationX(0f)?.setDuration(BACK_FINISH_DURATION_MS)?.start()
+        menu.animate().translationX(-width * BACK_PARALLAX).setDuration(BACK_FINISH_DURATION_MS).withEndAction {
+            (menu.parent as? ViewGroup)?.removeView(menu)
+        }.start()
     }
 
     private fun openSettingsPage(page: SettingsPage) {
@@ -192,7 +256,8 @@ internal class SettingsSection(private val activity: MainActivity) {
             isFillViewport = true
             setBackgroundColor(resColor(R.color.surface_alt))
             setOnScrollChangeListener { _, _, scrollY, _, _ -> activity.settingsScrollY = scrollY }
-            post { scrollTo(0, activity.settingsScrollY) }
+            val initialScrollY = activity.settingsScrollY
+            post { scrollTo(0, initialScrollY) }
         }
         val content = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
@@ -203,16 +268,19 @@ internal class SettingsSection(private val activity: MainActivity) {
             // 넓은 화면: 왼쪽 칸에 메뉴, 오른쪽 칸에 선택한 하위 화면
             val page = openPage ?: SettingsPage.GENERAL
             scrollView.setTag(R.id.wide_two_pane, true)
-            content.orientation = LinearLayout.HORIZONTAL
+            // 두 헤더를 한 줄에 두어, 한쪽 설명이 두 줄로 넘어가도 아래 카드들의 윗선이 맞게 한다
             content.addView(LinearLayout(activity).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(settingsHeader())
-                addView(settingsMenuCard(selected = page))
-            }, LinearLayout.LayoutParams(0, wrap, 1f))
+                addView(settingsHeader(), LinearLayout.LayoutParams(0, wrap, 1f))
+                addView(settingsHeader(page.title, page.summary),
+                    LinearLayout.LayoutParams(0, wrap, 1.4f).apply { leftMargin = dp(28) })
+            })
             content.addView(LinearLayout(activity).apply {
-                orientation = LinearLayout.VERTICAL
-                addPageContent(page, showBack = false)
-            }, LinearLayout.LayoutParams(0, wrap, 1.4f).apply { leftMargin = dp(28) })
+                addView(settingsMenuCard(selected = page), LinearLayout.LayoutParams(0, wrap, 1f))
+                addView(LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addPageContent(page, showBack = false, showHeader = false)
+                }, LinearLayout.LayoutParams(0, wrap, 1.4f).apply { leftMargin = dp(28) })
+            })
         } else {
             val page = openPage
             if (page == null) {
@@ -225,7 +293,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         return scrollView
     }
 
-    private fun LinearLayout.addPageContent(page: SettingsPage, showBack: Boolean) {
+    private fun LinearLayout.addPageContent(page: SettingsPage, showBack: Boolean, showHeader: Boolean = true) {
         if (showBack) {
             addView(TextView(context).apply {
                 text = "← 설정"
@@ -239,16 +307,10 @@ internal class SettingsSection(private val activity: MainActivity) {
                 }
             })
         }
-        addView(TextView(context).apply {
-            text = page.title
-            textSize = 28f
-            typeface = resources.pretendardBold()
-            setTextColor(resColor(R.color.text_primary))
-            setPadding(0, 0, 0, dp(12))
-        })
+        if (showHeader) addView(settingsHeader(page.title, page.summary))
         when (page) {
             SettingsPage.GENERAL -> {
-                addView(settingsSectionTitle("앱 동작"))
+                addView(settingsSectionTitle("앱 동작", first = true))
                 addView(profileSettingsCard())
                 addView(settingsSectionTitle("홈 화면"))
                 addView(homeSettingsCard())
@@ -316,29 +378,33 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
     }
 
-    private fun settingsHeader(): View = LinearLayout(activity).apply {
+    private fun settingsHeader(
+        title: String = "설정",
+        subtitle: String = "앱 동작, 테마, 알림과 데이터 백업을 관리합니다"
+    ): View = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(0, 0, 0, dp(12))
         addView(TextView(context).apply {
-            text = "설정"
+            text = title
             textSize = 28f
             typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
-            text = "앱 동작, 테마, 알림과 데이터 백업을 관리합니다"
+            text = subtitle
             textSize = 14f
             setTextColor(resColor(R.color.text_secondary))
             setPadding(0, dp(4), 0, 0)
         })
     }
 
-    private fun settingsSectionTitle(title: String): View = TextView(activity).apply {
+    /** first: 헤더 바로 아래 첫 묶음은 헤더 아래 여백(12dp)이 이미 있어 위 여백을 줄인다. */
+    private fun settingsSectionTitle(title: String, first: Boolean = false): View = TextView(activity).apply {
         text = title
         textSize = 17f
         typeface = resources.pretendardBold()
         setTextColor(resColor(R.color.text_primary))
-        setPadding(0, dp(18), 0, dp(10))
+        setPadding(0, dp(if (first) 4 else 18), 0, dp(10))
     }
 
     private fun themeSettingsCard(): View = settingsCard(verticalPaddingDp = 12) {
@@ -1316,6 +1382,9 @@ internal class SettingsSection(private val activity: MainActivity) {
         const val GOOGLE_DEVELOPER_ERROR_STATUS_CODE = 10
         const val DISABLED_BUTTON_ALPHA = 0.45f
         const val THEME_TRANSITION_DURATION_MS = 220L
+        const val BACK_FINISH_DURATION_MS = 160L
+        /** 뒤에서 들어오는 메뉴가 시작하는 위치(화면 폭 대비). 하위 화면보다 덜 움직여 깊이감을 준다. */
+        const val BACK_PARALLAX = 0.25f
         var pendingThemeTransitionBitmap: Bitmap? = null
     }
 }

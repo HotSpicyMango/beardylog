@@ -172,8 +172,8 @@ internal class HomeSection(private val activity: MainActivity) {
         addItem.addView(TextView(activity).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(20))
             text = "프로필 추가"
-            textSize = 12f
             maxLines = 1
+            fitProfileLabel()
             includeFontPadding = false
             setTextColor(activity.appColor(R.color.forest))
             // 테마 폰트에 BOLD를 합성하면 일부 기기에서 시스템 폰트로 대체되어 굵은 파일을 직접 지정한다
@@ -226,9 +226,9 @@ internal class HomeSection(private val activity: MainActivity) {
             item.addView(TextView(activity).apply {
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(20))
                 text = reptile.name
-                textSize = 12f
                 maxLines = 1
                 ellipsize = android.text.TextUtils.TruncateAt.END
+                fitProfileLabel()
                 includeFontPadding = false
                 setTextColor(if (isSelectedProfile) activity.appColor(R.color.forest) else activity.appColor(R.color.text_secondary))
                 // 테마 폰트에 스타일을 합성하면 시스템 폰트로 대체되어 굵기별 패밀리를 직접 지정한다
@@ -264,6 +264,16 @@ internal class HomeSection(private val activity: MainActivity) {
     }
 
     // ---- 내부 구현 ----
+
+    /** 프로필 칸 아래 이름표는 칸 크기가 고정이라, 시스템 글꼴을 키우면 글자가 잘린다("프로필 추가" → "프로필", 이름 아랫부분).
+     *  평소 크기(12sp, 글꼴 배율 반영)에서 시작해 칸에 들어갈 때까지 줄이되, 배율과 상관없이 8dp 밑으로는 줄이지 않는다. */
+    private fun TextView.fitProfileLabel() {
+        val metrics = resources.displayMetrics
+        val maxPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_SP, 12f, metrics).toInt()
+        androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+            this, dp(8).coerceAtMost(maxPx), maxPx, 1, android.util.TypedValue.COMPLEX_UNIT_PX
+        )
+    }
 
     private fun observeCareData() {
         activity.database.careScheduleDao().observeAll().observe(activity) {

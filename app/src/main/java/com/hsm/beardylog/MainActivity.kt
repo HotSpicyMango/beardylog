@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -187,6 +188,19 @@ class MainActivity : AppBaseActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 handleMainBackPressed()
+            }
+
+            // 설정 하위 화면에서는 제스처를 따라 메뉴가 옆에서 밀려 들어오게 한다 (Android 14+ 예측 뒤로가기)
+            override fun handleOnBackStarted(backEvent: BackEventCompat) {
+                if (currentSection == MainSection.SETTINGS) settingsSection.onBackStarted()
+            }
+
+            override fun handleOnBackProgressed(backEvent: BackEventCompat) {
+                if (currentSection == MainSection.SETTINGS) settingsSection.onBackProgressed(backEvent.progress)
+            }
+
+            override fun handleOnBackCancelled() {
+                if (currentSection == MainSection.SETTINGS) settingsSection.onBackCancelled()
             }
         })
     }
