@@ -31,3 +31,11 @@ local.properties
 # Local AI tool state
 /.claude/
 /.serena/
+
+# Build outputs that may land outside /release
+*.apk
+*.aab
+
+# Other local tool state
+/.vscode/
+/graphify-out/
