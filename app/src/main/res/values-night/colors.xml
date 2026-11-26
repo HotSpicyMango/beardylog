@@ -61,8 +61,6 @@
     <color name="palette_slate_text_secondary">#FF9E9E9E</color>
 
     <!-- 사진 없는 개체의 기본 이미지(무채색, 테마 무관) -->
-    <color name="placeholder_background">#FF1C1C1C</color>
-    <color name="placeholder_stroke">#FF4A4A4A</color>
     <color name="placeholder_eye">#FFE6E6E6</color>
     <color name="placeholder_pupil">#FF1E1E1E</color>
 </resources>

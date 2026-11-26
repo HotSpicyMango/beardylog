@@ -57,7 +57,7 @@
                                 </FrameLayout>
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
-                        <TextView android:id="@+id/noticeBanner" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:ellipsize="marquee" android:singleLine="true" android:marqueeRepeatLimit="marquee_forever" android:gravity="center" android:textColor="?attr/beardyTextSecondary" android:textSize="13sp" android:visibility="gone" />
+                        <TextView android:id="@+id/noticeBanner" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:ellipsize="marquee" android:singleLine="true" android:marqueeRepeatLimit="3" android:gravity="center" android:textColor="?attr/beardyTextSecondary" android:textSize="13sp" android:visibility="gone" />
                     </LinearLayout>
                 </androidx.core.widget.NestedScrollView>
             </LinearLayout>

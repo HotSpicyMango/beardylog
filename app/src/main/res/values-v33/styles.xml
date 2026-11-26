@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.Beardylog.TextView" parent="android:Widget.Material.TextView">
+        <item name="android:lineBreakWordStyle">phrase</item>
+    </style>
+</resources>

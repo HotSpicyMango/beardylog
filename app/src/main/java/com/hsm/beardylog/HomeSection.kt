@@ -61,7 +61,7 @@ internal class HomeSection(private val activity: MainActivity) {
             activity.binding.noticeBanner.apply {
                 this.text = text
                 visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
-                isSelected = true // 긴 문구는 marquee로 흐르게
+                isSelected = true // 긴 문구는 marquee로 3회 흐른 뒤 멈춘다
             }
         }
     }
