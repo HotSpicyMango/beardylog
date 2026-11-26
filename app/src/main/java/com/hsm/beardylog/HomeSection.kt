@@ -42,6 +42,28 @@ internal class HomeSection(private val activity: MainActivity) {
         activity.binding.profileSortSpinner.setSelection(profileSortMode)
         observeCareData()
         setupActions()
+        loadNotice()
+    }
+
+    /** 저장소 master의 notice.txt 첫 줄을 홈 하단에 띄운다. 파일만 고쳐 푸시하면 앱 업데이트 없이 문구가 바뀐다.
+     *  비어 있거나 실패(오프라인 등)하면 숨긴다. raw.githubusercontent.com은 약 5분 캐시된다. */
+    private fun loadNotice() {
+        activity.lifecycleScope.launch {
+            val text = runCatching {
+                withContext(Dispatchers.IO) {
+                    java.net.URL(NOTICE_URL).openConnection().run {
+                        connectTimeout = 10_000
+                        readTimeout = 10_000
+                        getInputStream().bufferedReader().use { it.readLine() }
+                    }
+                }
+            }.getOrNull()?.trim().orEmpty()
+            activity.binding.noticeBanner.apply {
+                this.text = text
+                visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
+                isSelected = true // 긴 문구는 marquee로 흐르게
+            }
+        }
     }
 
     internal fun resolveInitialProfileSelection() {
@@ -397,6 +419,7 @@ internal class HomeSection(private val activity: MainActivity) {
     private fun dp(value: Int): Int = activity.dp(value)
 
     companion object {
+        private const val NOTICE_URL = "https://raw.githubusercontent.com/HotSpicyMango/beardylog/master/notice.txt"
         private const val PROFILE_GRID_ROWS = 2
         private const val PROFILE_GRID_CELL_WIDTH_DP = 82
         private const val PROFILE_GRID_FALLBACK_HORIZONTAL_PADDING_DP = 40
