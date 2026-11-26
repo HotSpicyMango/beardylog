@@ -180,7 +180,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "달력"
                 textSize = 28f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             val showTodayButton = shouldShowTodayButton()
@@ -188,7 +188,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = LocalDate.now().dayOfMonth.toString()
                 textSize = 16f
                 gravity = Gravity.CENTER
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.button_on_primary))
                 setBackgroundResource(R.drawable.bg_today_button)
                 // 고정 크기 대신 최소 크기로 두어, 시스템 글꼴을 키워도 숫자가 잘리지 않고 버튼이 커지게 한다
@@ -222,7 +222,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 contentDescription = "이전 달"
                 textSize = 34f
                 gravity = Gravity.CENTER
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.forest))
                 setBackgroundResource(R.drawable.bg_week_day)
                 isClickable = true
@@ -237,7 +237,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = currentCalendarMonth.format(DateTimeFormatter.ofPattern("yyyy년 M월"))
                 textSize = 22f
                 gravity = Gravity.CENTER
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.text_primary))
                 calendarMonthTitleText = this
             }, LinearLayout.LayoutParams(0, wrap, 1f))
@@ -247,7 +247,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 contentDescription = "다음 달"
                 textSize = 34f
                 gravity = Gravity.CENTER
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.forest))
                 setBackgroundResource(R.drawable.bg_week_day)
                 isClickable = true
@@ -315,7 +315,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                     text = label
                     gravity = Gravity.CENTER
                     textSize = 13f
-                    typeface = resources.getFont(R.font.pretendard_bold)
+                    typeface = resources.pretendardBold()
                     setTextColor(resColor(if (index == 0) R.color.danger else R.color.text_secondary))
                 }, calendarCell(0, index, dp(34)))
             }
@@ -364,7 +364,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             text = date.dayOfMonth.toString()
             textSize = 15f
             gravity = Gravity.CENTER
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
         })
         val monthEntry = calendarMonthEntries[date]
         val cellIcons = calendarCellIcons(monthEntry)
@@ -453,7 +453,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "일정 요약"
                 textSize = 17f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             addView(TextView(context).apply {
@@ -479,7 +479,7 @@ internal class CalendarSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "메모"
                 textSize = 17f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(wrap, wrap))
             addView(LinearLayout(context).apply {
@@ -622,7 +622,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = "달력"
                 textSize = 24f
                 gravity = Gravity.CENTER
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             addView(View(context), LinearLayout.LayoutParams(dp(48), dp(44)))
@@ -630,7 +630,7 @@ internal class CalendarSection(private val activity: MainActivity) {
         content.addView(TextView(activity).apply {
             text = calendarDetailTitle(date)
             textSize = 26f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
             gravity = Gravity.CENTER
             setPadding(0, dp(12), 0, dp(18))
@@ -659,7 +659,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 addView(TextView(context).apply {
                     text = "메모"
                     textSize = 17f
-                    typeface = resources.getFont(R.font.pretendard_bold)
+                    typeface = resources.pretendardBold()
                     setTextColor(resColor(R.color.text_primary))
                 }, LinearLayout.LayoutParams(0, wrap, 1f))
                 addView(
@@ -811,7 +811,7 @@ internal class CalendarSection(private val activity: MainActivity) {
                 text = message
                 textSize = 14f
                 gravity = Gravity.CENTER
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.surface_card))
                 setBackgroundResource(R.drawable.bg_calendar_feedback)
                 setPadding(dp(24), dp(12), dp(24), dp(12))

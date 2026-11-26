@@ -124,7 +124,7 @@ internal class MemorialSection(private val activity: MainActivity) {
         textColumn.addView(TextView(activity).apply {
             text = reptile.name
             textSize = 17f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         textColumn.addView(TextView(activity).apply {
@@ -159,7 +159,7 @@ internal class MemorialSection(private val activity: MainActivity) {
             text = "← 추억공간"
             textSize = 14f
             setTextColor(resColor(R.color.forest))
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setOnClickListener { view ->
                 view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
                 memorialDetailId = null
@@ -185,7 +185,7 @@ internal class MemorialSection(private val activity: MainActivity) {
         content.addView(TextView(activity).apply {
             text = reptile.name
             textSize = 26f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
             gravity = Gravity.CENTER
         }, LinearLayout.LayoutParams(match, wrap).apply { topMargin = dp(16) })
@@ -223,7 +223,7 @@ internal class MemorialSection(private val activity: MainActivity) {
             text = memorialPeriodLabel(reptile).substringBefore(" ·")
             textSize = 14f
             setTextColor(resColor(R.color.forest))
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setPadding(0, dp(8), 0, 0)
         })
         infoCard.addView(infoColumn, ViewGroup.LayoutParams(match, wrap))
@@ -242,7 +242,7 @@ internal class MemorialSection(private val activity: MainActivity) {
             noteColumn.addView(TextView(activity).apply {
                 text = "추억 메모"
                 textSize = 15f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.forest))
             })
             noteColumn.addView(TextView(activity).apply {
@@ -340,7 +340,7 @@ internal class MemorialSection(private val activity: MainActivity) {
         column.addView(TextView(activity).apply {
             text = if (albumPhotos.isEmpty()) "추억 앨범" else "추억 앨범 · ${albumPhotos.size}장"
             textSize = 15f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.forest))
         })
         if (albumPhotos.isNotEmpty()) {
@@ -393,7 +393,7 @@ internal class MemorialSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = title
             textSize = 28f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {

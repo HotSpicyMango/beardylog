@@ -34,8 +34,8 @@ android {
         applicationId = "com.hsm.beardylog"
         minSdk = 28
         targetSdk = 37
-        versionCode = 26
-        versionName = "1.1.6"
+        versionCode = 28
+        versionName = "1.1.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // 마이그레이션 테스트가 옛 버전 스키마를 불러올 수 있도록 Room이 버전별 스키마를 내보낸다.

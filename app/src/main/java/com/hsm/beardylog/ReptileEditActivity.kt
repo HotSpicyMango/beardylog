@@ -8,6 +8,7 @@ import android.widget.ArrayAdapter
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -72,6 +73,7 @@ class ReptileEditActivity : AppBaseActivity() {
                 requestClose()
             }
         })
+        binding.nameInput.doAfterTextChanged { binding.nameInputLayout.error = null }
         binding.genderInput.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, genderOptions))
         binding.genderInput.setText("미구분", false)
         binding.photoPreview.setOnClickListener { view ->
@@ -207,7 +209,7 @@ class ReptileEditActivity : AppBaseActivity() {
         val name = binding.nameInput.text.toString().trim()
         if (name.isBlank()) {
             binding.saveButton.rejectHaptic()
-            binding.nameInput.error = "이름을 입력해 주세요"
+            binding.nameInputLayout.error = "이름을 입력해 주세요"
             return
         }
         val primaryDate = hatchingDate ?: adoptionDate

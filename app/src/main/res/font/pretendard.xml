@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 가변 글꼴 하나로 100~900 굵기를 모두 실제 인스턴스로 제공한다. -->
 <font-family xmlns:android="http://schemas.android.com/apk/res/android">
+    <font
+        android:font="@font/pretendard_variable"
+        android:fontStyle="normal"
+        android:fontWeight="100"
+        android:fontVariationSettings="'wght' 100" />
+    <font
+        android:font="@font/pretendard_variable"
+        android:fontStyle="normal"
+        android:fontWeight="200"
+        android:fontVariationSettings="'wght' 200" />
+    <font
+        android:font="@font/pretendard_variable"
+        android:fontStyle="normal"
+        android:fontWeight="300"
+        android:fontVariationSettings="'wght' 300" />
     <font
         android:font="@font/pretendard_variable"
         android:fontStyle="normal"
@@ -8,6 +24,26 @@
     <font
         android:font="@font/pretendard_variable"
         android:fontStyle="normal"
+        android:fontWeight="500"
+        android:fontVariationSettings="'wght' 500" />
+    <font
+        android:font="@font/pretendard_variable"
+        android:fontStyle="normal"
+        android:fontWeight="600"
+        android:fontVariationSettings="'wght' 600" />
+    <font
+        android:font="@font/pretendard_variable"
+        android:fontStyle="normal"
         android:fontWeight="700"
         android:fontVariationSettings="'wght' 700" />
+    <font
+        android:font="@font/pretendard_variable"
+        android:fontStyle="normal"
+        android:fontWeight="800"
+        android:fontVariationSettings="'wght' 800" />
+    <font
+        android:font="@font/pretendard_variable"
+        android:fontStyle="normal"
+        android:fontWeight="900"
+        android:fontVariationSettings="'wght' 900" />
 </font-family>

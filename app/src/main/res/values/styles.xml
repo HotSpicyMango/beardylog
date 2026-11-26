@@ -1,12 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 한국어가 단어 중간에서 줄바꿈되지 않도록 values-v33에서 어절 단위 줄바꿈을 켠다 (API 33 미만은 기본 동작). -->
+    <style name="Widget.Beardylog.TextView" parent="android:Widget.Material.TextView" />
     <style name="BottomNavNoIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@android:color/transparent</item>
     </style>
     <style name="BottomNavLabel" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/pretendard</item>
+        <item name="android:fontFamily">@font/pretendard</item>
         <item name="android:textSize">12dp</item>
     </style>
     <style name="BottomNavLabelActive" parent="BottomNavLabel">
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- 툴바 제목과 입력칸 오류 문구는 textAppearance로 폰트를 덮어써 테마 폰트가 안 먹으므로 따로 지정한다. -->
+    <style name="TextAppearance.Beardylog.ToolbarTitle" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/pretendard</item>
+        <item name="android:fontFamily">@font/pretendard</item>
+    </style>
+    <style name="Widget.Beardylog.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.Beardylog.ToolbarTitle</item>
+    </style>
+
+    <style name="TextAppearance.Beardylog.InputError" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/pretendard</item>
+        <item name="android:fontFamily">@font/pretendard</item>
+    </style>
+    <style name="Widget.Beardylog.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="errorTextAppearance">@style/TextAppearance.Beardylog.InputError</item>
     </style>
 </resources>

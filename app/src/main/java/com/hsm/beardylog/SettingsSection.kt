@@ -14,6 +14,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import android.util.TypedValue
 import android.view.Gravity
@@ -144,6 +145,48 @@ internal class SettingsSection(private val activity: MainActivity) {
         }
     }
 
+    /** 설정 메뉴에서 들어가는 하위 화면. 좁은 화면에서는 null이면 메뉴 목록을 보여준다. */
+    private enum class SettingsPage(val title: String, val summary: String) {
+        GENERAL("일반", "프로필 자동 선택, 홈 그래프 기간"),
+        THEME("테마", "화면 모드, 앱 테마색"),
+        NOTIFICATION("알림", "일정, 식단, 부화 알림"),
+        BACKUP("백업 및 복원", "Google Drive 백업과 복원"),
+        UPDATE("업데이트", "자동 확인, 베타 채널"),
+        APP_INFO("앱 정보", "버전, 제작")
+    }
+
+    private var openPage: SettingsPage? = null
+
+    fun save(outState: Bundle) {
+        openPage?.let { outState.putString(KEY_SETTINGS_PAGE, it.name) }
+    }
+
+    /** 테마 변경은 recreate()를 거치므로, 보던 하위 화면으로 돌아오려면 상태를 저장해 두어야 한다. */
+    fun restore(savedInstanceState: Bundle?) {
+        openPage = savedInstanceState?.getString(KEY_SETTINGS_PAGE)
+            ?.let { name -> runCatching { SettingsPage.valueOf(name) }.getOrNull() }
+    }
+
+    fun leave() {
+        openPage = null
+        activity.settingsScrollY = 0
+    }
+
+    /** 넓은 화면은 메뉴와 하위 화면이 함께 보이므로 뒤로가기로 닫을 하위 화면이 없다. */
+    fun closeDetail(): Boolean {
+        if (activity.isWide || openPage == null) return false
+        openPage = null
+        activity.settingsScrollY = 0
+        activity.replaceTopContent(createContentView())
+        return true
+    }
+
+    private fun openSettingsPage(page: SettingsPage) {
+        openPage = page
+        activity.settingsScrollY = 0
+        activity.replaceTopContent(createContentView())
+    }
+
     fun createContentView(): View {
         val scrollView = ScrollView(activity).apply {
             isFillViewport = true
@@ -156,22 +199,121 @@ internal class SettingsSection(private val activity: MainActivity) {
             setPadding(dp(20), dp(20), dp(20), dp(24))
         }
         scrollView.addView(content, ViewGroup.LayoutParams(match, wrap))
-        content.addView(settingsHeader())
-        content.addView(settingsSectionTitle("앱 동작"))
-        content.addView(profileSettingsCard())
-        content.addView(settingsSectionTitle("테마"))
-        content.addView(themeSettingsCard())
-        content.addView(settingsSectionTitle("홈 화면"))
-        content.addView(homeSettingsCard())
-        content.addView(settingsSectionTitle("알림"))
-        content.addView(notificationSettingsCard())
-        content.addView(settingsSectionTitle("백업 및 복원"))
-        content.addView(backupSettingsCard())
-        content.addView(settingsSectionTitle("업데이트"))
-        content.addView(updateSettingsCard())
-        content.addView(settingsSectionTitle("앱 정보"))
-        content.addView(appInfoCard())
+        if (activity.isWide) {
+            // 넓은 화면: 왼쪽 칸에 메뉴, 오른쪽 칸에 선택한 하위 화면
+            val page = openPage ?: SettingsPage.GENERAL
+            scrollView.setTag(R.id.wide_two_pane, true)
+            content.orientation = LinearLayout.HORIZONTAL
+            content.addView(LinearLayout(activity).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(settingsHeader())
+                addView(settingsMenuCard(selected = page))
+            }, LinearLayout.LayoutParams(0, wrap, 1f))
+            content.addView(LinearLayout(activity).apply {
+                orientation = LinearLayout.VERTICAL
+                addPageContent(page, showBack = false)
+            }, LinearLayout.LayoutParams(0, wrap, 1.4f).apply { leftMargin = dp(28) })
+        } else {
+            val page = openPage
+            if (page == null) {
+                content.addView(settingsHeader())
+                content.addView(settingsMenuCard(selected = null))
+            } else {
+                content.addPageContent(page, showBack = true)
+            }
+        }
         return scrollView
+    }
+
+    private fun LinearLayout.addPageContent(page: SettingsPage, showBack: Boolean) {
+        if (showBack) {
+            addView(TextView(context).apply {
+                text = "← 설정"
+                textSize = 14f
+                setTextColor(resColor(R.color.forest))
+                typeface = resources.pretendardBold()
+                setPadding(0, 0, 0, dp(12))
+                setOnClickListener { view ->
+                    view.clickHaptic()
+                    closeDetail()
+                }
+            })
+        }
+        addView(TextView(context).apply {
+            text = page.title
+            textSize = 28f
+            typeface = resources.pretendardBold()
+            setTextColor(resColor(R.color.text_primary))
+            setPadding(0, 0, 0, dp(12))
+        })
+        when (page) {
+            SettingsPage.GENERAL -> {
+                addView(settingsSectionTitle("앱 동작"))
+                addView(profileSettingsCard())
+                addView(settingsSectionTitle("홈 화면"))
+                addView(homeSettingsCard())
+            }
+            SettingsPage.THEME -> addView(themeSettingsCard())
+            SettingsPage.NOTIFICATION -> addView(notificationSettingsCard())
+            SettingsPage.BACKUP -> addView(backupSettingsCard())
+            SettingsPage.UPDATE -> addView(updateSettingsCard())
+            SettingsPage.APP_INFO -> addView(appInfoCard())
+        }
+    }
+
+    private fun settingsMenuCard(selected: SettingsPage?): View = settingsCard(verticalPaddingDp = 6) {
+        SettingsPage.entries.forEachIndexed { index, page ->
+            if (index > 0) addAppInfoDivider(marginDp = 0)
+            addView(settingsMenuRow(page, page == selected))
+        }
+    }
+
+    private fun settingsMenuRow(page: SettingsPage, selected: Boolean): View = LinearLayout(activity).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        minimumHeight = dp(64)
+        // 넓은 화면은 선택 강조 배경이 글자에 붙지 않도록 좌우 여백을 준다
+        val sidePadding = if (activity.isWide) dp(12) else 0
+        setPadding(sidePadding, dp(10), sidePadding, dp(10))
+        isClickable = true
+        isFocusable = true
+        if (selected) {
+            background = GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(resColor(R.color.forest_light))
+            }
+        } else {
+            val selectableBackground = TypedValue()
+            if (activity.theme.resolveAttribute(android.R.attr.selectableItemBackground, selectableBackground, true)) {
+                setBackgroundResource(selectableBackground.resourceId)
+            }
+        }
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(TextView(context).apply {
+                text = page.title
+                textSize = 16f
+                typeface = resources.pretendardBold()
+                setTextColor(resColor(if (selected) R.color.forest else R.color.text_primary))
+            })
+            addView(TextView(context).apply {
+                text = page.summary
+                textSize = 13f
+                setTextColor(resColor(R.color.text_secondary))
+                setPadding(0, dp(4), 0, 0)
+            })
+        }, LinearLayout.LayoutParams(0, wrap, 1f))
+        addView(TextView(context).apply {
+            text = "›"
+            textSize = 20f
+            setTextColor(resColor(R.color.text_secondary))
+        })
+        if (selected) contentDescription = "${page.title}, ${page.summary}, 선택됨"
+        setOnClickListener { view ->
+            if (selected) return@setOnClickListener
+            view.clickHaptic()
+            openSettingsPage(page)
+        }
     }
 
     private fun settingsHeader(): View = LinearLayout(activity).apply {
@@ -180,11 +322,11 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "설정"
             textSize = 28f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
-            text = "앱 테마, 홈 화면, 앱 동작과 데이터 백업을 관리합니다"
+            text = "앱 동작, 테마, 알림과 데이터 백업을 관리합니다"
             textSize = 14f
             setTextColor(resColor(R.color.text_secondary))
             setPadding(0, dp(4), 0, 0)
@@ -194,7 +336,7 @@ internal class SettingsSection(private val activity: MainActivity) {
     private fun settingsSectionTitle(title: String): View = TextView(activity).apply {
         text = title
         textSize = 17f
-        typeface = resources.getFont(R.font.pretendard_bold)
+        typeface = resources.pretendardBold()
         setTextColor(resColor(R.color.text_primary))
         setPadding(0, dp(18), 0, dp(10))
     }
@@ -203,7 +345,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "화면 모드"
             textSize = 16f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         addView(displayModeToggle(), LinearLayout.LayoutParams(match, wrap).apply {
@@ -213,7 +355,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "앱 테마색"
             textSize = 16f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
@@ -297,7 +439,7 @@ internal class SettingsSection(private val activity: MainActivity) {
                 addView(TextView(context).apply {
                     text = palette.displayName
                     textSize = 15f
-                    typeface = resources.getFont(if (selected) R.font.pretendard_bold else R.font.pretendard)
+                    typeface = if (selected) resources.pretendardBold() else resources.getFont(R.font.pretendard)
                     setTextColor(resColor(R.color.text_primary))
                 })
                 addView(TextView(context).apply {
@@ -312,7 +454,7 @@ internal class SettingsSection(private val activity: MainActivity) {
                 text = if (selected) "✓" else ""
                 textSize = 20f
                 gravity = Gravity.CENTER
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.forest))
             }, LinearLayout.LayoutParams(dp(32), dp(40)))
 
@@ -505,7 +647,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = "Google Drive"
             textSize = 16f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {
@@ -544,7 +686,7 @@ internal class SettingsSection(private val activity: MainActivity) {
         driveEmptyStateHintText = TextView(context).apply {
             text = "재설치한 경우 백업을 누르지 말고 먼저 Google Drive에서 복원하세요"
             textSize = 13f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.forest))
             setPadding(0, 0, 0, dp(12))
             visibility = if (activity.allReptiles.isEmpty()) View.VISIBLE else View.GONE
@@ -941,7 +1083,7 @@ internal class SettingsSection(private val activity: MainActivity) {
                 addView(TextView(context).apply {
                     text = title
                     textSize = 16f
-                    typeface = resources.getFont(R.font.pretendard_bold)
+                    typeface = resources.pretendardBold()
                     setTextColor(resColor(R.color.text_primary))
                 })
                 addView(TextView(context).apply {
@@ -1169,6 +1311,7 @@ internal class SettingsSection(private val activity: MainActivity) {
     private val wrap: Int get() = ViewGroup.LayoutParams.WRAP_CONTENT
 
     private companion object {
+        const val KEY_SETTINGS_PAGE = "settings_page"
         const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
         const val GOOGLE_DEVELOPER_ERROR_STATUS_CODE = 10
         const val DISABLED_BUTTON_ALPHA = 0.45f

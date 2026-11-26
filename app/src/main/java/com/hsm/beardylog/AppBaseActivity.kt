@@ -4,6 +4,8 @@ import com.google.android.material.card.MaterialCardView
 import android.widget.LinearLayout
 import android.view.ViewGroup
 import android.content.Context
+import android.content.res.Resources
+import android.graphics.Typeface
 import android.graphics.Rect
 import android.os.Bundle
 import android.os.Build
@@ -180,6 +182,9 @@ internal fun BottomSheetDialog.openFullyExpanded() {
     behavior.skipCollapsed = true
     behavior.state = BottomSheetBehavior.STATE_EXPANDED
 }
+
+// pretendard 패밀리의 700 항목(실제 굵기 인스턴스)을 고른다. 굵기를 합성하지 않는다.
+internal fun Resources.pretendardBold(): Typeface = Typeface.create(getFont(R.font.pretendard), 700, false)
 
 internal fun Context.dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 

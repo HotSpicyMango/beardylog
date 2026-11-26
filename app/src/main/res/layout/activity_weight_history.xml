@@ -12,8 +12,8 @@
         android:layout_height="wrap_content"
         android:background="?attr/beardyBackground"
         android:navigationIcon="@drawable/ic_back"
-        android:title="무게 기록"
-        android:titleTextColor="?attr/beardyTextPrimary"
+        app:title="무게 기록"
+        app:titleTextColor="?attr/beardyTextPrimary"
         app:navigationIconTint="?attr/beardyTextPrimary" />
 
     <androidx.core.widget.NestedScrollView
@@ -156,31 +156,32 @@
                 <com.google.android.material.chip.Chip
                     android:id="@+id/periodOneWeek"
                     style="@style/Widget.Material3.Chip.Filter"
+                    android:textAppearance="@style/TextAppearance.Beardylog.PeriodChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/d2"
                     android:text="1주" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/periodOneMonth"
                     style="@style/Widget.Material3.Chip.Filter"
+                    android:textAppearance="@style/TextAppearance.Beardylog.PeriodChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/d2"
                     android:text="1개월" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/periodThreeMonths"
                     style="@style/Widget.Material3.Chip.Filter"
+                    android:textAppearance="@style/TextAppearance.Beardylog.PeriodChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
-                    android:fontFamily="@font/d2"
                     android:text="3개월" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/periodAll"
                     style="@style/Widget.Material3.Chip.Filter"
+                    android:textAppearance="@style/TextAppearance.Beardylog.PeriodChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="전체" />

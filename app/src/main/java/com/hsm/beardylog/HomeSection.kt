@@ -177,7 +177,7 @@ internal class HomeSection(private val activity: MainActivity) {
             includeFontPadding = false
             setTextColor(activity.appColor(R.color.forest))
             // 테마 폰트에 BOLD를 합성하면 일부 기기에서 시스템 폰트로 대체되어 굵은 파일을 직접 지정한다
-            typeface = activity.resources.getFont(R.font.pretendard_bold)
+            typeface = activity.resources.pretendardBold()
             gravity = Gravity.CENTER
         })
         activity.binding.profileGrid.addView(addItem, gridCell(0, 0))
@@ -232,7 +232,7 @@ internal class HomeSection(private val activity: MainActivity) {
                 includeFontPadding = false
                 setTextColor(if (isSelectedProfile) activity.appColor(R.color.forest) else activity.appColor(R.color.text_secondary))
                 // 테마 폰트에 스타일을 합성하면 시스템 폰트로 대체되어 굵기별 패밀리를 직접 지정한다
-                typeface = activity.resources.getFont(if (isSelectedProfile) R.font.pretendard_bold else R.font.pretendard)
+                typeface = if (isSelectedProfile) activity.resources.pretendardBold() else activity.resources.getFont(R.font.pretendard)
                 setPadding(0, dp(3), 0, 0)
                 gravity = Gravity.CENTER
             })

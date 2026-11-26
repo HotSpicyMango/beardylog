@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/beardyBackground" android:orientation="vertical">
-    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="?attr/beardyBackground" android:title="개체 상세" android:titleTextColor="?attr/beardyTextPrimary" android:navigationIcon="@drawable/ic_back" app:navigationIconTint="?attr/beardyTextPrimary" />
+    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="?attr/beardyBackground" app:title="개체 상세" app:titleTextColor="?attr/beardyTextPrimary" android:navigationIcon="@drawable/ic_back" app:navigationIconTint="?attr/beardyTextPrimary" />
     <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp">
             <ImageView android:id="@+id/photo" android:layout_width="128dp" android:layout_height="128dp" android:background="@drawable/bg_photo_placeholder" android:contentDescription="도마뱀 사진" android:scaleType="centerCrop" android:src="@drawable/ic_lizard_placeholder" />

@@ -193,6 +193,7 @@ class MainActivity : AppBaseActivity() {
 
     private fun restoreMainState(savedInstanceState: Bundle?) {
         calendarSection.restore(savedInstanceState)
+        settingsSection.restore(savedInstanceState)
         settingsScrollY = savedInstanceState?.getInt(KEY_SETTINGS_SCROLL_Y, 0) ?: 0
         if (savedInstanceState?.containsKey(KEY_SELECTED_REPTILE_ID) == true) {
             homeSection.restoreSelection(savedInstanceState.getLong(KEY_SELECTED_REPTILE_ID).takeIf { it != NO_SELECTION })
@@ -270,6 +271,7 @@ class MainActivity : AppBaseActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(KEY_CURRENT_SECTION, currentSection.name)
         calendarSection.save(outState)
+        settingsSection.save(outState)
         outState.putInt(KEY_SETTINGS_SCROLL_Y, settingsScrollY)
         outState.putLong(KEY_SELECTED_REPTILE_ID, selectedReptileId ?: NO_SELECTION)
         super.onSaveInstanceState(outState)
@@ -327,6 +329,9 @@ class MainActivity : AppBaseActivity() {
         if (section != MainSection.BREEDING) {
             breedingSection.leave()
         }
+        if (section != MainSection.SETTINGS) {
+            settingsSection.leave()
+        }
         replaceTopContent(when (section) {
             MainSection.HOME -> homeContent
             MainSection.BREEDING -> breedingSection.createContentView()
@@ -345,6 +350,7 @@ class MainActivity : AppBaseActivity() {
             replaceTopContent(breedingSection.createContentView())
             return
         }
+        if (currentSection == MainSection.SETTINGS && settingsSection.closeDetail()) return
         if (calendarSection.handleBackPressed()) return
         if (currentSection != MainSection.HOME) {
             binding.bottomNavigation.selectedItemId = R.id.nav_home

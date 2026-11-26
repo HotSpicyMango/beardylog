@@ -175,7 +175,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         topRow.addView(TextView(activity).apply {
             text = "${maleDisplayName(pair)} × ${femaleDisplayName(pair)}"
             textSize = 14f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
@@ -183,7 +183,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         topRow.addView(TextView(activity).apply {
             text = formatDDay(pair.matingDate)
             textSize = 13f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.forest))
         }, LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = dp(6) })
         column.addView(topRow)
@@ -211,7 +211,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             metaRow.addView(TextView(activity).apply {
                 text = "+ 클러치"
                 textSize = 12f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.forest))
                 setPadding(dp(8), dp(2), 0, dp(2))
                 setOnClickListener { view ->
@@ -282,7 +282,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             text = "← 브리딩"
             textSize = 14f
             setTextColor(resColor(R.color.forest))
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setOnClickListener { view ->
                 view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
                 detailPairId = null
@@ -299,7 +299,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         parentsRow.addView(TextView(activity).apply {
             text = "×"
             textSize = 14f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_secondary))
         }, LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = dp(8); marginEnd = dp(8) })
         parentsRow.addView(parentChip(pair.femaleReptileId, femaleDisplayName(pair)), LinearLayout.LayoutParams(0, wrap, 1f))
@@ -325,7 +325,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = formatDDay(pair.matingDate)
                 textSize = 16f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.forest))
             })
         })
@@ -355,7 +355,7 @@ internal class BreedingSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "클러치 (${pairClutches.size}/$MAX_CLUTCHES)"
                 textSize = 18f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             if (pairClutches.size < MAX_CLUTCHES) {
@@ -425,7 +425,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         row.addView(TextView(activity).apply {
             text = name
             textSize = 14f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
@@ -452,14 +452,14 @@ internal class BreedingSection(private val activity: MainActivity) {
             addView(TextView(context).apply {
                 text = "${clutch.clutchNumber}차"
                 textSize = 16f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(R.color.text_primary))
             }, LinearLayout.LayoutParams(0, wrap, 1f))
             val ended = clutch.ddayEndDate != null
             addView(TextView(context).apply {
                 text = formatDDay(clutch.layingDate, clutch.ddayEndDate) + if (ended) " · 종료" else ""
                 textSize = 15f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
                 setTextColor(resColor(if (ended) R.color.text_secondary else R.color.forest))
             })
         })
@@ -719,7 +719,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         form.addView(TextView(activity).apply {
             text = "${targetClutchNumber}차 산란"
             textSize = 16f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         val dateField = pickerField("산란일: ${selectedLayingDate.format(dateFormatter)}")
@@ -791,7 +791,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         form.addView(TextView(activity).apply {
             text = "해츨링 관리 · ${clutch.clutchNumber}차"
             textSize = 16f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         val normalInput = numberEditText("정상 개체 수")
@@ -1069,7 +1069,7 @@ internal class BreedingSection(private val activity: MainActivity) {
         addView(TextView(context).apply {
             text = title
             textSize = 28f
-            typeface = resources.getFont(R.font.pretendard_bold)
+            typeface = resources.pretendardBold()
             setTextColor(resColor(R.color.text_primary))
         })
         addView(TextView(context).apply {

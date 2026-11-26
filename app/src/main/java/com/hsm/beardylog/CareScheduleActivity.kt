@@ -192,7 +192,7 @@ class CareScheduleActivity : AppBaseActivity() {
                 }
                 setTextColor(context.appColor(R.color.text_primary))
                 textSize = 17f
-                typeface = resources.getFont(R.font.pretendard_bold)
+                typeface = resources.pretendardBold()
             })
             entries.forEach { (schedule, effectiveDate) ->
                 val currentLog = effectiveDate?.let { date -> logs.firstOrNull { it.scheduleId == schedule.id && it.completedDate == date } }
